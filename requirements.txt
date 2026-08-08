@@ -1,3 +1,8 @@
+# drf-yasg imports pkg_resources without declaring setuptools as a dependency. Python
+# 3.12's venv/pip no longer bundle setuptools by default, and setuptools>=81 dropped
+# pkg_resources outright (deprecated, slated for removal 2025-11-30) — pin below that.
+setuptools<81
+
 # Core Django
 Django==5.0.2
 djangorestframework==3.14.0
