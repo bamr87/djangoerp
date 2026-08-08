@@ -4,7 +4,7 @@
 setuptools<81
 
 # Core Django
-Django==5.0.2
+Django==5.2.16
 djangorestframework==3.14.0
 djangorestframework-simplejwt==5.3.1
 drf-yasg==1.21.7
