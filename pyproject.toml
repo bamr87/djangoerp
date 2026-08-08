@@ -1,0 +1,7 @@
+[tool.pytest.ini_options]
+DJANGO_SETTINGS_MODULE = "djangoerp.settings.dev"
+python_files = ["tests.py", "test_*.py"]
+addopts = "-v --tb=short"
+
+[tool.isort]
+known_first_party = ["accounts", "coa", "journal", "invoices", "reports", "core", "djangoerp"]
