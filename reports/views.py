@@ -26,6 +26,10 @@ class ReportTemplateViewSet(viewsets.ModelViewSet):
         """
         Filter templates to show only system templates and user's own templates
         """
+        # Schema generation probes viewsets with an anonymous user; short-circuit
+        # per drf-yasg docs so swagger.json builds without a noisy traceback.
+        if getattr(self, 'swagger_fake_view', False):
+            return ReportTemplate.objects.none()
         user = self.request.user
         return ReportTemplate.objects.filter(Q(is_system=True) | Q(created_by=user))
 
@@ -57,6 +61,8 @@ class SavedReportViewSet(viewsets.ModelViewSet):
         """
         Show only reports created by the user unless user is admin/accountant
         """
+        if getattr(self, 'swagger_fake_view', False):
+            return SavedReport.objects.none()
         user = self.request.user
         try:
             if user.role.role in ('admin', 'accountant'):

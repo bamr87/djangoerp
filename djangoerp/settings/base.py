@@ -29,13 +29,21 @@ INSTALLED_APPS = [
     'django_filters',
     'corsheaders',
     'drf_yasg',
-    # Local
+    # Local — financial core
     'core',
     'accounts',
     'coa',
     'journal',
     'invoices',
     'reports',
+    # Local — supply chain, manufacturing, planning
+    'partners',
+    'products',
+    'inventory',
+    'purchasing',
+    'sales',
+    'manufacturing',
+    'mrp',
 ]
 
 MIDDLEWARE = [

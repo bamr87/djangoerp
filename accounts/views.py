@@ -5,12 +5,7 @@ from rest_framework_simplejwt.views import TokenObtainPairView
 
 from .models import AuditLog, UserRole
 from .permissions import IsAdmin, IsAdminOrSelf
-from .serializers import (
-    AuditLogSerializer,
-    CustomTokenObtainPairSerializer,
-    UserRoleSerializer,
-    UserSerializer,
-)
+from .serializers import AuditLogSerializer, CustomTokenObtainPairSerializer, UserRoleSerializer, UserSerializer
 
 
 class CustomTokenObtainPairView(TokenObtainPairView):

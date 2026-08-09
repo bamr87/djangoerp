@@ -19,6 +19,10 @@ class JournalEntry(models.Model):
     # an author field they can leave empty, and SET_NULL so deleting a user cannot take
     # their journal entries with it. Matches Invoice/SavedReport.created_by.
     created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
+    # Set by journal.services.post_entry for system-generated postings — one business
+    # event, one entry. Unique (NULLs exempt) so a retried flow cannot double-post the
+    # same event; manual API entries leave it null.
+    source_reference = models.CharField(max_length=64, unique=True, null=True, blank=True)
 
     def __str__(self):
         return self.entry_number
