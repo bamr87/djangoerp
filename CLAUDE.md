@@ -41,6 +41,7 @@ python manage.py makemigrations --check --dry-run   # fails if a model change ne
 | --- | --- |
 | `djangoerp/` | Project package: `settings/` (base/dev/prod split), root `urls.py`, `celery.py`, WSGI/ASGI |
 | `core/` | Shared platform: `TimestampMixin`, `DocumentSequence` (atomic document numbering — always claim numbers via `DocumentSequence.next_number(prefix)`), `core/audit.py` (`log_event`, the audit-trail writer used by every service transition), `core/demo.py` + the `demo_erp` management command, and `core/tests.py` (the end-to-end integration suite) |
+| `company/` | `Company` — the legal entity whose books this installation keeps — plus the browser-facing landing page and the `/health/` probe. Deliberately *not* in `core/`: `core` stays infrastructure-only. Its `urls.py` is the DRF router (`/api/company/`); `urls_web.py` owns the site root |
 | `accounts/` | `UserRole` (admin/accountant/viewer/auditor, `OneToOne` to `django.contrib.auth.User`) + `AuditLog`, JWT login view, and the shared DRF permission classes |
 | `coa/` | Chart of accounts: `AccountType` and the self-referencing `Account` tree |
 | `journal/` | `JournalEntry` header + `JournalLine` rows — the double-entry ledger — plus `services.post_entry`, the one programmatic write path for system postings |
@@ -76,7 +77,8 @@ Every app exposes a DRF `DefaultRouter` from its own `urls.py`, included by `dja
 | `/api/sales/` | `orders/` (+`{id}/confirm/`, `{id}/ship/`, `{id}/invoice/`, `{id}/cancel/`) |
 | `/api/manufacturing/` | `boms/`, `work-orders/` (+`{id}/confirm/`, `{id}/start/`, `{id}/complete/`, `{id}/availability/`, `{id}/cancel/`) |
 | `/api/mrp/` | `runs/` (create dispatches the engine; +`{id}/convert/`), `planned-orders/` (read-only +`{id}/cancel/`) |
-| — | `/admin/`, `/swagger/`, `/redoc/`, `/swagger.json` |
+| `/api/company/` | `companies/` |
+| — | `/`, `/health/` (from `company/urls_web.py`), `/admin/`, `/swagger/`, `/redoc/`, `/swagger.json` |
 
 ## Domain rules that must not be broken
 

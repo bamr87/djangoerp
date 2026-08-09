@@ -28,7 +28,10 @@ urlpatterns = [
     path('api/sales/', include('sales.urls')),
     path('api/manufacturing/', include('manufacturing.urls')),
     path('api/mrp/', include('mrp.urls')),
+    path('api/company/', include('company.urls')),
     path('swagger<format>/', schema_view.without_ui(cache_timeout=0), name='schema-json'),
     path('swagger/', schema_view.with_ui('swagger', cache_timeout=0), name='schema-swagger-ui'),
     path('redoc/', schema_view.with_ui('redoc', cache_timeout=0), name='schema-redoc'),
+    # Browser-facing routes last — company.urls_web owns the site root.
+    path('', include('company.urls_web')),
 ]
