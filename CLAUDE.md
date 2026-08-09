@@ -35,6 +35,26 @@ python manage.py check
 python manage.py makemigrations --check --dry-run   # fails if a model change needs a new migration
 ```
 
+Docker is the alternative to the venv above — it runs the app on PostgreSQL and Redis instead of the SQLite/eager-Celery defaults, which is the point of reaching for it. The entrypoint migrates on every start.
+
+```bash
+docker compose up                       # web + postgres + redis, autoreload, no debugger
+docker compose --profile celery up      # ...plus a real Celery worker (dispatches for real)
+DEBUGPY_ENABLE=1 docker compose up -d --wait web   # what VS Code's preLaunchTask runs
+
+# the verification loop, in the container:
+docker compose exec web sh -c 'python manage.py check && python manage.py makemigrations --check --dry-run'
+docker compose run --rm -e RUN_MIGRATIONS=0 web python manage.py test
+docker compose run --rm -e RUN_MIGRATIONS=0 web python -m pytest
+docker compose exec web python manage.py demo_erp
+
+docker compose down -v                  # stop and drop the database volume
+```
+
+The entrypoint seeds the admin account from `.env` (`DJANGO_SUPERUSER_*`, default `djangoerp`/`djangoerp`) via `docker/bootstrap-admin.py`, superuser plus `UserRole` row, idempotent and never resetting an existing password. Published ports bind to `127.0.0.1` — an open debugpy port is remote code execution and the stack ships a known password; `BIND_HOST` opts out.
+
+Debugging is attach-based: press F5 on **Docker: Attach to Django**. Its `preLaunchTask` starts the stack with debugpy enabled and blocks on the compose healthcheck, so attach cannot race startup. Debug mode runs `runserver --noreload` on purpose — Django's autoreloader forks a child to serve requests while the debugger stays attached to the parent, so breakpoints would never hit. Editing `docker/*.sh` needs a `docker compose build`; those are baked into the image, unlike the source tree, which is bind-mounted.
+
 ## Layout
 
 | Path | Role |
@@ -56,6 +76,10 @@ python manage.py makemigrations --check --dry-run   # fails if a model change ne
 | `mrp/` | `MRPRun`/`PlannedOrder`, `engine.py` (the planning algorithm, a Celery task) and `services.convert_run` (planned orders → draft POs/WOs) |
 | `docs/ARCHITECTURE.md` | Module map, invariants, GL posting matrix, MRP algorithm, adopted open-source patterns + licensing rationale |
 | `tools/unwrap-prose.py` | Vendored from the hub; do not edit — it is the markdown CI gate |
+| `Dockerfile` | Multi-stage image: `base` → `dev` (debugpy) and `base` → `prod` (gunicorn + collected static) |
+| `docker-compose.yml` | Local stack — `web`, `db` (PostgreSQL), `redis`, and `worker` behind the `celery` profile |
+| `docker/` | Container entrypoint, admin bootstrap, dev server/worker launchers, and the healthcheck scripts compose probes |
+| `.vscode/` | `launch.json` (attach configurations, Docker and local) and `tasks.json` (the compose plumbing they call) |
 
 Each app owns `apps.py`, `models.py`, `migrations/`, and usually `serializers.py`, `views.py`, `urls.py`, `admin.py`, `tests.py` — unlike the source repos this was ported from, apps here have committed migrations and real tests from the start. Document apps additionally own a `services.py` holding their state transitions.
 
@@ -90,6 +114,7 @@ These were verified and hard-won in `amrs-project`; do not regress them during t
 - **Normal balances.** Assets and expenses are debit-normal; liabilities, equity, and revenue are credit-normal. `calculate_account_balances` applies that signing, and the balance sheet and income statement build on it. `generate_trial_balance` deliberately does *not*: a trial balance lists raw debit-minus-credit balances so the two columns agree. Do not "fix" it back to normal-balance signing — that pushes credit-normal accounts into the debit column and makes `balanced` permanently false.
 - **The balance sheet folds open P&L into equity.** Revenue and expense accounts stay open until a closing entry moves them to retained earnings, so `generate_balance_sheet` adds `current_period_earnings` (revenue minus expenses as of the report date) to `total_equity` and reports it as its own field. `amrs-django`'s rewrite of this report dropped that fold-in and its balance sheet never foots for any book with posted P&L — `reports/tests.py::ReportGeneratorTests` pins this behavior, keep it passing.
 - **Roles come from `accounts/permissions.py`.** Reuse `IsAdmin`, `IsAdminOrSelf`, `IsAccountant` (admin implied), `IsAuditor` (admin implied). They all read `request.user.role.role` inside `try/except AttributeError`, so a user with no `UserRole` row is denied rather than crashing. Do not re-implement role checks inline in a viewset.
+- **A superuser is not an API user.** `UserRole` has no auto-creating signal, and every permission class reads `request.user.role.role` inside `try/except AttributeError`, so an account made by `manage.py createsuperuser` can open `/admin/` but is denied by `IsAdmin`/`IsAccountant`/`IsAuditor` everywhere. Create the `UserRole` row with the user — `docker/bootstrap-admin.py` does this for the Docker stack, `demo_erp` for the demo user.
 - **Money is `DecimalField`.** Never `FloatField`. Ledger amounts (`JournalLine.debit`/`credit`) are `max_digits=20, decimal_places=2` — wider than the `12,2` used elsewhere — to leave headroom for large-scale postings (e.g. a future EDGAR/XBRL import, see amrs-project's `edgar` app) without another migration.
 - **The COA is a tree.** `AccountSerializer.validate` walks ancestors to reject cycles; `Account.parent_account` is `PROTECT`, as is `Account.account_type`.
 - **Posted history is immutable.** A posted journal entry can only be voided (`JournalEntrySerializer` enforces it); a done stock move, posted invoice or posted payment rejects edits. Corrections are reversing entries and opposing moves, never edits.

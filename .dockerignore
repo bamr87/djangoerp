@@ -1,0 +1,30 @@
+# Build context excludes. Dev containers bind-mount the source anyway, so this
+# only shapes the image layers — keep it aggressive.
+.git
+.github
+.venv
+venv
+__pycache__
+*.py[cod]
+*.egg-info
+.pytest_cache
+.mypy_cache
+.ruff_cache
+
+# Local state that must never bake into an image
+.env
+db.sqlite3
+*.sqlite3
+staticfiles
+celerybeat-schedule
+celerybeat.pid
+
+# Editor / OS noise
+.vscode
+.idea
+.DS_Store
+
+# Docs are not needed at runtime
+docs
+*.md
+!README.md

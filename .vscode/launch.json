@@ -1,19 +1,148 @@
 {
-    // Use IntelliSense to learn about possible attributes.
-    // Hover to view descriptions of existing attributes.
-    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    // DjangoERP debug configurations.
+    //
+    // Docker (primary): the stack in docker-compose.yml runs Django under
+    // debugpy; these configurations attach to it. Each Docker config has a
+    // preLaunchTask that brings the required containers up in debug mode, so
+    // F5 works from a cold start — no manual `docker compose up` first.
+    //
+    // Local: the plain virtualenv workflow, kept for when Docker is overkill.
+    //
+    // justMyCode is false throughout on purpose: most of the load-bearing
+    // logic in this project runs inside DRF (serializer validate() hooks) and
+    // Django (transaction/lock behaviour in the posting services), and you
+    // cannot step into either with it on.
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "Python Debugger: Django",
+            // Primary loop: attach to `web` from docker-compose.yml.
+            // Breakpoints in views, serializers and services.py all hit here.
+            // Dev settings run Celery eagerly, so report generation and MRP
+            // runs execute in this process too unless the celery profile is up.
+            "name": "Docker: Attach to Django",
+            "type": "debugpy",
+            "request": "attach",
+            "connect": {
+                "host": "localhost",
+                "port": 5678
+            },
+            "pathMappings": [
+                {
+                    "localRoot": "${workspaceFolder}",
+                    "remoteRoot": "/app"
+                }
+            ],
+            "django": true,
+            "justMyCode": false,
+            "redirectOutput": true,
+            "preLaunchTask": "docker: up (debug)"
+        },
+        {
+            // Attach to the Celery worker from the `celery` compose profile.
+            // Worth it for mrp/engine.py and reports/report_generators.py when
+            // you want them running as real async tasks rather than eagerly.
+            "name": "Docker: Attach to Celery worker",
+            "type": "debugpy",
+            "request": "attach",
+            "connect": {
+                "host": "localhost",
+                "port": 5679
+            },
+            "pathMappings": [
+                {
+                    "localRoot": "${workspaceFolder}",
+                    "remoteRoot": "/app"
+                }
+            ],
+            "justMyCode": false,
+            "redirectOutput": true,
+            "preLaunchTask": "docker: up worker (debug)"
+        },
+        {
+            // For one-shot runs: tests, pytest, demo_erp.
+            // Start one of the "docker: debug ..." tasks first (Terminal > Run
+            // Task). It blocks on --wait-for-client; then launch this. No
+            // preLaunchTask here because the task deliberately stays in the
+            // foreground so you can read its output.
+            "name": "Docker: Attach to one-shot command",
+            "type": "debugpy",
+            "request": "attach",
+            "connect": {
+                "host": "localhost",
+                "port": 5680
+            },
+            "pathMappings": [
+                {
+                    "localRoot": "${workspaceFolder}",
+                    "remoteRoot": "/app"
+                }
+            ],
+            "django": true,
+            "justMyCode": false,
+            "redirectOutput": true
+        },
+        {
+            "name": "Local: Django runserver",
             "type": "debugpy",
             "request": "launch",
+            "program": "${workspaceFolder}/manage.py",
             "args": [
                 "runserver"
             ],
             "django": true,
+            "justMyCode": false,
             "autoStartBrowser": false,
-            "program": "${workspaceFolder}/manage.py"
+            "console": "integratedTerminal"
+        },
+        {
+            "name": "Local: Django tests",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/manage.py",
+            "args": [
+                "test"
+            ],
+            "django": true,
+            "justMyCode": false,
+            "console": "integratedTerminal"
+        },
+        {
+            "name": "Local: pytest",
+            "type": "debugpy",
+            "request": "launch",
+            "module": "pytest",
+            "args": [
+                "${workspaceFolder}"
+            ],
+            "justMyCode": false,
+            "console": "integratedTerminal"
+        },
+        {
+            // The end-to-end ERP loop — plan, buy, make, ship, bill, collect.
+            // Exits non-zero if the books do not balance, so it is the fastest
+            // way to reproduce a posting bug under a debugger.
+            "name": "Local: demo_erp",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/manage.py",
+            "args": [
+                "demo_erp"
+            ],
+            "django": true,
+            "justMyCode": false,
+            "console": "integratedTerminal"
+        }
+    ],
+    "compounds": [
+        {
+            // Both halves of the async story at once: request handling in web,
+            // task execution in the worker.
+            "name": "Docker: Django + Celery worker",
+            "configurations": [
+                "Docker: Attach to Django",
+                "Docker: Attach to Celery worker"
+            ],
+            "stopAll": true
         }
     ]
 }
