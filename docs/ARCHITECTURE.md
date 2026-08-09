@@ -123,7 +123,7 @@ sequenceDiagram
     SO->>GL: invoice: Dr AR / Cr Revenue, payment: Dr Cash / Cr AR
 ```
 
-The same flow is pinned with exact numbers by `core/tests.py::EndToEndERPFlowTests`, which ends by asserting the trial balance foots, the balance sheet balances with current-period earnings folded into equity, net income equals revenue minus COGS, the audit trail recorded every transition, and a second regenerative MRP run plans nothing because the first cycle satisfied all demand.
+The same flow is pinned with exact numbers by `apps/core/tests.py::EndToEndERPFlowTests`, which ends by asserting the trial balance foots, the balance sheet balances with current-period earnings folded into equity, net income equals revenue minus COGS, the audit trail recorded every transition, and a second regenerative MRP run plans nothing because the first cycle satisfied all demand.
 
 ## Open-source designs adopted, and licensing
 

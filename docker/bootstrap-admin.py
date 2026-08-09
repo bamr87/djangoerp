@@ -3,7 +3,7 @@ Idempotent admin bootstrap for the local Docker stack.
 
 Creates the superuser named by DJANGO_SUPERUSER_* and — critically — the
 matching accounts.UserRole row. `manage.py createsuperuser` alone is not
-enough here: every DRF permission class in accounts/permissions.py reads
+enough here: every DRF permission class in apps/accounts/permissions.py reads
 `request.user.role.role` inside a try/except AttributeError, so a superuser
 with no UserRole can open /admin/ but is denied by IsAdmin, IsAccountant and
 IsAuditor on every API endpoint.
@@ -27,7 +27,7 @@ django.setup()
 
 from django.contrib.auth.models import User  # noqa: E402
 
-from accounts.models import UserRole  # noqa: E402
+from apps.accounts.models import UserRole  # noqa: E402
 
 username = os.environ.get('DJANGO_SUPERUSER_USERNAME', '').strip()
 password = os.environ.get('DJANGO_SUPERUSER_PASSWORD', '')
