@@ -1,0 +1,129 @@
+# Local development stack for DjangoERP.
+#
+#   docker compose up                      # web + postgres + redis, autoreload
+#   DEBUGPY_ENABLE=1 docker compose up -d  # same, with the debugger listening
+#   docker compose --profile celery up     # add a real Celery worker
+#
+# VS Code drives this through .vscode/tasks.json; see .vscode/launch.json for
+# the attach configurations and README.md for the full walkthrough.
+#
+# Postgres here rather than the SQLite default of djangoerp/settings/dev.py:
+# parity with production is the reason to reach for compose at all. Container
+# environment wins over the bind-mounted .env because settings/base.py calls
+# read_env(..., overwrite=False).
+
+name: djangoerp
+
+x-django-env: &django-env
+  DJANGO_SETTINGS_MODULE: djangoerp.settings.dev
+  SECRET_KEY: ${SECRET_KEY:-django-insecure-docker-local-only}
+  ALLOWED_HOSTS: localhost,127.0.0.1,0.0.0.0,web,[::1]
+  DATABASE_URL: postgres://djangoerp:djangoerp@db:5432/djangoerp
+  REDIS_URL: redis://redis:6379/0
+  # dev.py defaults this to True (tasks run in-process). The celery profile
+  # flips it so the worker below actually receives work.
+  CELERY_TASK_ALWAYS_EAGER: ${CELERY_TASK_ALWAYS_EAGER:-True}
+  PYTHONBREAKPOINT: debugpy.breakpoint
+  # Seeded on first start by docker/bootstrap-admin.py, which also creates the
+  # accounts.UserRole row the DRF permission classes require — createsuperuser
+  # alone yields an account /admin/ accepts but every API endpoint rejects.
+  # Override in .env; these defaults are local-development credentials.
+  DJANGO_SUPERUSER_USERNAME: ${DJANGO_SUPERUSER_USERNAME:-djangoerp}
+  DJANGO_SUPERUSER_EMAIL: ${DJANGO_SUPERUSER_EMAIL:-admin@djangoerp.local}
+  DJANGO_SUPERUSER_PASSWORD: ${DJANGO_SUPERUSER_PASSWORD:-djangoerp}
+  DJANGO_SUPERUSER_ROLE: ${DJANGO_SUPERUSER_ROLE:-admin}
+
+x-dev-build: &dev-build
+  build:
+    context: .
+    target: dev
+
+services:
+  db:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: djangoerp
+      POSTGRES_PASSWORD: djangoerp
+      POSTGRES_DB: djangoerp
+    # Published off the standard port so an existing local Postgres does not
+    # block startup; containers reach it as db:5432 regardless.
+    ports:
+      - "${BIND_HOST:-127.0.0.1}:${POSTGRES_PORT:-5433}:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U djangoerp -d djangoerp"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+
+  redis:
+    image: redis:8-alpine
+    # Likewise off 6379 — containers reach it as redis:6379.
+    ports:
+      - "${BIND_HOST:-127.0.0.1}:${REDIS_PORT:-6380}:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  web:
+    <<: *dev-build
+    command: dev-server.sh
+    environment:
+      <<: *django-env
+      DEBUGPY_ENABLE: ${DEBUGPY_ENABLE:-0}
+      DEBUGPY_WAIT: ${DEBUGPY_WAIT:-0}
+    volumes:
+      - .:/app
+    ports:
+      - "${BIND_HOST:-127.0.0.1}:${DJANGO_PORT:-8000}:8000"
+      - "${BIND_HOST:-127.0.0.1}:${DEBUGPY_WEB_PORT:-5678}:5678"
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    # Probes company's /health/, and adapts to DEBUGPY_WAIT — see
+    # docker/healthcheck-web.sh. `up --wait` in the VS Code tasks depends on
+    # this being honest about readiness, otherwise attach races startup.
+    healthcheck:
+      test: ["CMD", "healthcheck-web.sh"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 20s
+    stdin_open: true
+    tty: true
+
+  worker:
+    <<: *dev-build
+    command: dev-worker.sh
+    profiles: ["celery"]
+    environment:
+      <<: *django-env
+      CELERY_TASK_ALWAYS_EAGER: "False"
+      DEBUGPY_ENABLE: ${DEBUGPY_ENABLE:-0}
+      # The web container owns the schema; a second migrate here would race it.
+      RUN_MIGRATIONS: "0"
+      BOOTSTRAP_ADMIN: "0"
+    volumes:
+      - .:/app
+    ports:
+      - "${BIND_HOST:-127.0.0.1}:${DEBUGPY_WORKER_PORT:-5679}:5678"
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "healthcheck-worker.sh"]
+      interval: 5s
+      timeout: 10s
+      retries: 20
+      start_period: 20s
+
+volumes:
+  pgdata:

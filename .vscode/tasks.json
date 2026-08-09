@@ -1,0 +1,242 @@
+{
+    // Docker plumbing for the configurations in launch.json.
+    //
+    // The "(debug)" tasks set DEBUGPY_ENABLE=1 and use `up --wait`, which
+    // blocks on the compose healthchecks — so by the time a preLaunchTask
+    // returns, the debug adapter is listening and attach cannot race startup.
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "docker: up",
+            "detail": "Start web + postgres + redis with autoreload and no debugger",
+            "type": "shell",
+            "command": "docker compose up -d --wait",
+            "problemMatcher": [],
+            "presentation": {
+                "reveal": "always",
+                "panel": "shared",
+                "clear": true
+            }
+        },
+        {
+            "label": "docker: up (debug)",
+            "detail": "Start the stack with Django under debugpy on :5678 (autoreload off)",
+            "type": "shell",
+            "command": "docker compose up -d --wait web",
+            "options": {
+                "env": {
+                    "DEBUGPY_ENABLE": "1"
+                }
+            },
+            "problemMatcher": [],
+            "presentation": {
+                "reveal": "silent",
+                "panel": "shared",
+                "clear": true
+            }
+        },
+        {
+            "label": "docker: up worker (debug)",
+            "detail": "Start the celery profile with the worker under debugpy on :5679, tasks dispatched for real",
+            "type": "shell",
+            "command": "docker compose --profile celery up -d --wait web worker",
+            "options": {
+                "env": {
+                    "DEBUGPY_ENABLE": "1",
+                    "CELERY_TASK_ALWAYS_EAGER": "False"
+                }
+            },
+            "problemMatcher": [],
+            "presentation": {
+                "reveal": "silent",
+                "panel": "shared",
+                "clear": true
+            }
+        },
+        {
+            "label": "docker: restart web",
+            "detail": "Pick up code changes while debugging (debugpy runs --noreload)",
+            "type": "shell",
+            "command": "docker compose restart web",
+            "problemMatcher": [],
+            "presentation": {
+                "reveal": "silent",
+                "panel": "shared"
+            }
+        },
+        {
+            "label": "docker: down",
+            "detail": "Stop the stack, keep the database volume",
+            "type": "shell",
+            "command": "docker compose --profile celery down",
+            "problemMatcher": []
+        },
+        {
+            "label": "docker: down (reset database)",
+            "detail": "Stop the stack and delete the Postgres volume — next start re-migrates from scratch",
+            "type": "shell",
+            "command": "docker compose --profile celery down -v",
+            "problemMatcher": []
+        },
+        {
+            "label": "docker: build",
+            "detail": "Rebuild images (needed after requirements.txt or Dockerfile changes)",
+            "type": "shell",
+            "command": "docker compose build",
+            "problemMatcher": []
+        },
+        {
+            "label": "docker: logs (web)",
+            "detail": "Follow the Django container log",
+            "type": "shell",
+            "command": "docker compose logs -f web",
+            "isBackground": true,
+            "problemMatcher": []
+        },
+        {
+            "label": "docker: shell",
+            "detail": "Bash prompt inside the running web container",
+            "type": "shell",
+            "command": "docker compose exec web bash",
+            "problemMatcher": [],
+            "presentation": {
+                "reveal": "always",
+                "panel": "dedicated",
+                "focus": true
+            }
+        },
+        {
+            "label": "docker: django shell",
+            "detail": "manage.py shell inside the running web container",
+            "type": "shell",
+            "command": "docker compose exec web python manage.py shell",
+            "problemMatcher": [],
+            "presentation": {
+                "reveal": "always",
+                "panel": "dedicated",
+                "focus": true
+            }
+        },
+        {
+            "label": "docker: bootstrap admin (from .env)",
+            "detail": "Re-run the DJANGO_SUPERUSER_* seed: superuser + UserRole, idempotent, never resets a password",
+            "type": "shell",
+            "command": "docker compose exec web python /usr/local/bin/bootstrap-admin.py",
+            "problemMatcher": [],
+            "presentation": {
+                "reveal": "always",
+                "panel": "dedicated"
+            }
+        },
+        {
+            "label": "docker: createsuperuser",
+            "detail": "Interactive extra user. NOTE: does not create a UserRole row, so the account is denied by every API permission class until you add one",
+            "type": "shell",
+            "command": "docker compose exec web python manage.py createsuperuser",
+            "problemMatcher": [],
+            "presentation": {
+                "reveal": "always",
+                "panel": "dedicated",
+                "focus": true
+            }
+        },
+        {
+            "label": "docker: change admin password",
+            "type": "shell",
+            "command": "docker compose exec web python manage.py changepassword ${input:adminUsername}",
+            "problemMatcher": [],
+            "presentation": {
+                "reveal": "always",
+                "panel": "dedicated",
+                "focus": true
+            }
+        },
+        {
+            "label": "docker: migrate",
+            "type": "shell",
+            "command": "docker compose exec web python manage.py migrate",
+            "problemMatcher": []
+        },
+        {
+            "label": "docker: check",
+            "detail": "manage.py check + makemigrations drift gate",
+            "type": "shell",
+            "command": "docker compose exec web sh -c 'python manage.py check && python manage.py makemigrations --check --dry-run'",
+            "group": "test",
+            "problemMatcher": []
+        },
+        {
+            "label": "docker: test",
+            "detail": "manage.py test in a throwaway container",
+            "type": "shell",
+            "command": "docker compose run --rm -e RUN_MIGRATIONS=0 web python manage.py test",
+            "group": {
+                "kind": "test",
+                "isDefault": true
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "docker: pytest",
+            "type": "shell",
+            "command": "docker compose run --rm -e RUN_MIGRATIONS=0 web python -m pytest",
+            "group": "test",
+            "problemMatcher": []
+        },
+        {
+            "label": "docker: demo_erp",
+            "detail": "Run the end-to-end ERP loop; exits non-zero if the books do not balance",
+            "type": "shell",
+            "command": "docker compose exec web python manage.py demo_erp",
+            "problemMatcher": [],
+            "presentation": {
+                "reveal": "always",
+                "panel": "dedicated"
+            }
+        },
+        {
+            "label": "docker: debug tests (attach on 5680)",
+            "detail": "Waits for 'Docker: Attach to one-shot command' before running manage.py test",
+            "type": "shell",
+            "command": "docker compose run --rm --publish 5680:5678 -e RUN_MIGRATIONS=0 -e DEBUGPY_ENABLE=1 web debug-command.sh manage.py test",
+            "problemMatcher": [],
+            "presentation": {
+                "reveal": "always",
+                "panel": "dedicated",
+                "clear": true
+            }
+        },
+        {
+            "label": "docker: debug pytest (attach on 5680)",
+            "detail": "Waits for 'Docker: Attach to one-shot command' before running pytest",
+            "type": "shell",
+            "command": "docker compose run --rm --publish 5680:5678 -e RUN_MIGRATIONS=0 -e DEBUGPY_ENABLE=1 web debug-command.sh -m pytest",
+            "problemMatcher": [],
+            "presentation": {
+                "reveal": "always",
+                "panel": "dedicated",
+                "clear": true
+            }
+        },
+        {
+            "label": "docker: debug demo_erp (attach on 5680)",
+            "detail": "Waits for 'Docker: Attach to one-shot command' before running the end-to-end loop",
+            "type": "shell",
+            "command": "docker compose run --rm --publish 5680:5678 -e DEBUGPY_ENABLE=1 web debug-command.sh manage.py demo_erp",
+            "problemMatcher": [],
+            "presentation": {
+                "reveal": "always",
+                "panel": "dedicated",
+                "clear": true
+            }
+        }
+    ],
+    "inputs": [
+        {
+            "id": "adminUsername",
+            "type": "promptString",
+            "description": "Username to change the password for",
+            "default": "djangoerp"
+        }
+    ]
+}
