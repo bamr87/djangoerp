@@ -1,0 +1,41 @@
+{% extends 'company/base.html' %}
+
+{% block title %}{% if company %}{{ company.name }}{% else %}Setup{% endif %}{% endblock %}
+
+{% block content %}
+    {% if company %}
+        <h2>{{ company.name }}</h2>
+        <p>
+            Books kept in <span class="badge">{{ company.currency_code }}</span>
+            {% if company.founded_on %}· founded {{ company.founded_on }}{% endif %}
+        </p>
+        {% if company.legal_name %}<p>Registered as <em>{{ company.legal_name }}</em>.</p>{% endif %}
+    {% else %}
+        <h2>No company on file</h2>
+        <p>
+            This installation has no company record yet. Create one in the
+            <a href="{% url 'admin:company_company_add' %}">admin</a>, or POST to
+            <code>/api/company/companies/</code>.
+        </p>
+    {% endif %}
+
+    <h3>API surface</h3>
+    <table>
+        <tr><th>Area</th><th>Prefix</th></tr>
+        <tr><td>Authentication (JWT)</td><td><code>/api/auth/</code></td></tr>
+        <tr><td>Chart of accounts</td><td><code>/api/coa/</code></td></tr>
+        <tr><td>Journal (double-entry ledger)</td><td><code>/api/journal/</code></td></tr>
+        <tr><td>Invoices &amp; payments</td><td><code>/api/invoices/</code></td></tr>
+        <tr><td>Reports</td><td><code>/api/reports/</code></td></tr>
+        <tr><td>Partners</td><td><code>/api/partners/</code></td></tr>
+        <tr><td>Products</td><td><code>/api/products/</code></td></tr>
+        <tr><td>Inventory</td><td><code>/api/inventory/</code></td></tr>
+        <tr><td>Purchasing</td><td><code>/api/purchasing/</code></td></tr>
+        <tr><td>Sales</td><td><code>/api/sales/</code></td></tr>
+        <tr><td>Manufacturing</td><td><code>/api/manufacturing/</code></td></tr>
+        <tr><td>MRP</td><td><code>/api/mrp/</code></td></tr>
+        <tr><td>Company</td><td><code>/api/company/</code></td></tr>
+    </table>
+
+    <p>Run <code>python manage.py demo_erp</code> to exercise the whole loop end to end.</p>
+{% endblock %}

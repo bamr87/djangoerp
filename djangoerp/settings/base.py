@@ -31,6 +31,7 @@ INSTALLED_APPS = [
     'drf_yasg',
     # Local — financial core
     'core',
+    'company',
     'accounts',
     'coa',
     'journal',
@@ -57,6 +58,9 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
+
+# Surfaced by the /health/ endpoint; bump alongside each release tag.
+APP_VERSION = '0.2.0'
 
 ROOT_URLCONF = 'djangoerp.urls'
 
