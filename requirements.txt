@@ -1,31 +1,28 @@
-# drf-yasg imports pkg_resources without declaring setuptools as a dependency. Python
-# 3.12's venv/pip no longer bundle setuptools by default, and setuptools>=81 dropped
-# pkg_resources outright (deprecated, slated for removal 2025-11-30) — pin below that.
-setuptools<81
+# Python floor: 3.12 (Django 6.x dropped 3.11; the shared hub CI runs 3.12 by default).
 
 # Core Django
-Django==5.0.2
-djangorestframework==3.14.0
-djangorestframework-simplejwt==5.3.1
-drf-yasg==1.21.7
-django-filter==23.5
-django-cors-headers==4.3.1
-django-environ==0.11.2
-psycopg2-binary==2.9.9
+Django==6.1
+djangorestframework==3.18.0
+djangorestframework-simplejwt==5.5.1
+drf-yasg==1.21.15
+django-filter==26.1
+django-cors-headers==4.9.0
+django-environ==0.14.0
+psycopg2-binary==2.9.12
 
 # Task queue
-celery==5.3.6
-redis==5.0.1
+celery==5.6.3
+redis==8.1.0
 
 # Testing
-pytest==7.4.3
-pytest-django==4.7.0
+pytest==9.1.1
+pytest-django==4.13.0
 
 # Development tools
-black==23.11.0
-flake8==6.1.0
-isort==5.12.0
+black==26.5.1
+flake8==7.3.0
+isort==8.0.1
 
 # Deployment
-gunicorn==21.2.0
-whitenoise==6.6.0
+gunicorn==26.0.0
+whitenoise==6.12.0

@@ -1,12 +1,12 @@
 # DjangoERP
 
-A Django 5 + Django REST Framework ERP built outward from a double-entry accounting core into a modular enterprise system: chart of accounts, journal entries, invoices/payments and async financial reports, plus business partners, products, multi-warehouse inventory with a stock ledger and moving-average costing, purchasing, sales, manufacturing (BOMs and work orders), and an MRP planning engine — the bare minimum for end-to-end order-to-cash, procure-to-pay and make-to-stock processing.
+A Django 6 + Django REST Framework ERP built outward from a double-entry accounting core into a modular enterprise system: chart of accounts, journal entries, invoices/payments and async financial reports, plus business partners, products, multi-warehouse inventory with a stock ledger and moving-average costing, purchasing, sales, manufacturing (BOMs and work orders), and an MRP planning engine — the bare minimum for end-to-end order-to-cash, procure-to-pay and make-to-stock processing.
 
 The financial core was consolidated from [`amrs-project`](https://github.com/bamr87/amrs-project) (AMRS), the most mature of several overlapping accounting prototypes in the fleet. The supply-chain and planning modules re-implement proven designs from ERPNext, Odoo, Tryton, InvenTree and frePPLe — see [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for the module map, invariants, posting matrix, MRP algorithm, and exactly which pattern came from where (and why no copyleft code was copied). See [CLAUDE.md](CLAUDE.md) for the domain rules that must not be broken.
 
 ## Technology stack
 
-* **Backend:** Python 3.11, Django 5.0, Django REST Framework
+* **Backend:** Python 3.12+, Django 6.1, Django REST Framework
 * **Database:** PostgreSQL in production, SQLite by default in development
 * **Authentication:** JSON Web Tokens (JWT) via `djangorestframework-simplejwt`
 * **API docs:** Swagger & ReDoc (`drf-yasg`)
@@ -16,7 +16,7 @@ The financial core was consolidated from [`amrs-project`](https://github.com/bam
 ## Getting started
 
 ```bash
-python3.11 -m venv .venv && source .venv/bin/activate && pip install -r requirements.txt
+python3.12 -m venv .venv && source .venv/bin/activate && pip install -r requirements.txt
 cp .env.example .env
 
 python manage.py migrate            # migrations are committed — no app-label dance needed

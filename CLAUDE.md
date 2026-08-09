@@ -2,15 +2,15 @@
 
 Guidance for AI coding agents (Claude Code, Copilot, Cursor) working in **djangoerp**.
 
-DjangoERP is a Django 5 + Django REST Framework ERP built outward from a double-entry accounting core into a modular enterprise system with end-to-end order-to-cash, procure-to-pay and make-to-stock processing plus an MRP planning engine. The financial core — chart of accounts, journal entries, invoices/payments, and async financial reports — was consolidated here from `amrs-project` (AMRS), the most mature of three overlapping accounting prototypes found across the fleet (`amrs-project`, `afms`, `amrs-django`); the supply-chain/planning modules re-implement patterns from ERPNext, Odoo, Tryton, InvenTree and frePPLe (designs only, no copyleft code — see `docs/ARCHITECTURE.md`). A change is "done" here when `python manage.py check` is clean, `makemigrations --check` reports no drift, `python manage.py test` and `python -m pytest` both pass, `python manage.py demo_erp` still ends balanced, and the nearest `README.md` reflects the change.
+DjangoERP is a Django 6 + Django REST Framework ERP built outward from a double-entry accounting core into a modular enterprise system with end-to-end order-to-cash, procure-to-pay and make-to-stock processing plus an MRP planning engine. The financial core — chart of accounts, journal entries, invoices/payments, and async financial reports — was consolidated here from `amrs-project` (AMRS), the most mature of three overlapping accounting prototypes found across the fleet (`amrs-project`, `afms`, `amrs-django`); the supply-chain/planning modules re-implement patterns from ERPNext, Odoo, Tryton, InvenTree and frePPLe (designs only, no copyleft code — see `docs/ARCHITECTURE.md`). A change is "done" here when `python manage.py check` is clean, `makemigrations --check` reports no drift, `python manage.py test` and `python -m pytest` both pass, `python manage.py demo_erp` still ends balanced, and the nearest `README.md` reflects the change.
 
 ## Stack & commands
 
-Python 3.11, Django 5.0, DRF, SimpleJWT, drf-yasg (Swagger/ReDoc), django-filter, Celery + Redis, PostgreSQL in production / SQLite by default in dev.
+Python 3.12+ (Django 6 dropped 3.11; the shared hub CI runs 3.12), Django 6.1, DRF, SimpleJWT, drf-yasg (Swagger/ReDoc), django-filter, Celery + Redis, PostgreSQL in production / SQLite by default in dev. Dependencies are pinned exact in `requirements.txt` — when bumping them, the whole verification loop below plus `demo_erp` is the acceptance gate.
 
 ```bash
 # install dependencies:
-python3.11 -m venv .venv && source .venv/bin/activate && pip install -r requirements.txt
+python3.12 -m venv .venv && source .venv/bin/activate && pip install -r requirements.txt
 cp .env.example .env
 
 # bootstrap the database — migrations are committed, unlike every source repo this was ported from:
@@ -26,7 +26,8 @@ python -m pytest
 
 # lint:
 flake8 --max-line-length=120 --exclude=.venv,migrations .
-black . && isort .                   # installed but unconfigured — scope to files you touched
+isort .                              # configured in pyproject.toml (line_length=120, first-party apps)
+black .                              # installed but unconfigured — scope any black run to files you touched
 python3 tools/unwrap-prose.py --check # markdown one-paragraph-per-line gate (CI enforces it)
 
 # sanity check:
