@@ -57,6 +57,18 @@ class SavedReportViewSet(viewsets.ModelViewSet):
     filterset_fields = ['template', 'status']
     search_fields = ['name']
 
+    def perform_create(self, serializer):
+        """
+        Creating a saved report dispatches the generator, mirroring MRPRunViewSet.
+
+        SavedReport.status defaults to 'generating', so without this dispatch the
+        row persists in that state and nothing ever runs it — the report hangs
+        forever and only the `regenerate` action can rescue it. Ownership is set
+        by SavedReportSerializer.create().
+        """
+        report = serializer.save()
+        generate_report.delay(report.id)
+
     def get_queryset(self):
         """
         Show only reports created by the user unless user is admin/accountant

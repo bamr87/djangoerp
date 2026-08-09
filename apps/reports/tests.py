@@ -47,13 +47,24 @@ class SavedReportTests(APITestCase):
             name='Trial Balance', report_type='trial_balance', created_by=self.user,
         )
 
-    def test_create_saved_report(self):
+    def test_create_saved_report_dispatches_the_generator(self):
+        # Regression: creating a saved report must dispatch generate_report, not just
+        # persist the row. SavedReport.status defaults to 'generating', so a create
+        # path that skips the dispatch returns a perfectly healthy-looking 201 and
+        # then hangs at 'generating' forever. Asserting only on the status code (as
+        # this test originally did) cannot tell the two apart.
         response = self.client.post(reverse('savedreport-list'), {
             'template': self.template.id,
             'name': 'Q1 Trial Balance',
             'parameters': {'as_of_date': '2026-03-31'},
         }, format='json')
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+        saved = SavedReport.objects.get(id=response.data['id'])
+        self.assertEqual(saved.created_by, self.user)
+        self.assertEqual(saved.status, 'completed')
+        self.assertEqual(saved.error_message, '')
+        self.assertIn('balanced', saved.result_data)
 
     def test_regenerate_actually_saves_decimal_result_data(self):
         # Regression test: result_data/parameters must use DjangoJSONEncoder.

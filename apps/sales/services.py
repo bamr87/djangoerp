@@ -109,7 +109,11 @@ def ship_sales_order(order, user=None, shipments=None, ship_date=None):
             source_reference=f'shipment:{shipment_number}',
         )
 
-        order.status = 'shipped' if all(line.open_quantity <= 0 for line in order.lines.all()) \
+        # Roll the status up from the line objects mutated above, not from
+        # order.lines.all(): the viewset's queryset prefetches `lines`, so on an
+        # order that arrived via get_object() that manager call is served from the
+        # prefetch cache and still reports the pre-shipment quantities.
+        order.status = 'shipped' if all(line.open_quantity <= 0 for line in lines) \
             else 'partially_shipped'
         order.save(update_fields=['status', 'updated_at'])
         log_event(user, 'sales_order.ship', order, {
