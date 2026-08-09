@@ -20,10 +20,10 @@ class JournalEntrySerializer(serializers.ModelSerializer):
     class Meta:
         model = JournalEntry
         fields = [
-            'id', 'entry_number', 'date', 'description', 'status',
+            'id', 'entry_number', 'date', 'description', 'status', 'source_reference',
             'created_by', 'created_by_display', 'lines', 'total_debit', 'total_credit'
         ]
-        read_only_fields = ['created_by']
+        read_only_fields = ['created_by', 'source_reference']
 
     def get_total_debit(self, obj):
         return sum(line.debit for line in obj.lines.all())
@@ -33,8 +33,24 @@ class JournalEntrySerializer(serializers.ModelSerializer):
 
     def validate(self, data):
         """
-        Check that the total debits equal total credits (balanced entry)
+        Check that the total debits equal total credits (balanced entry), and
+        that posted history stays immutable: a posted entry can only be voided,
+        never edited — corrections are reversing entries.
         """
+        if self.instance and self.instance.status == 'voided':
+            raise serializers.ValidationError("Voided entries are immutable")
+        if self.instance and self.instance.status == 'posted':
+            if data.get('status') != 'voided':
+                raise serializers.ValidationError(
+                    "Posted entries are ledger history: void them or post a reversing entry, don't edit"
+                )
+            for field in ('entry_number', 'date', 'description'):
+                if field in data and data[field] != getattr(self.instance, field):
+                    raise serializers.ValidationError(f"Cannot change {field} while voiding a posted entry")
+            if 'lines' in data:
+                raise serializers.ValidationError("Cannot change lines while voiding a posted entry")
+            return data
+
         lines = data.get('lines', [])
         if not lines:
             raise serializers.ValidationError("Journal entry must have at least one line")
