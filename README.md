@@ -78,6 +78,8 @@ python manage.py demo_erp
 
 builds a demo company (chart of accounts, GL mappings, partners, warehouse, a make/buy product structure with a BOM), then runs the full loop through the same services the API uses: sales order → MRP run → planned orders (pegged, lead-time offset) → purchase order + work order → goods receipt → production at rolled-up cost → shipment → customer invoice → payment → supplier settlement → trial balance / balance sheet / income statement. It exits non-zero if the books don't balance. The same flow is pinned with exact numbers in `apps/core/tests.py::EndToEndERPFlowTests`.
 
+`tools/e2e-api-smoke.sh` proves the same loops over HTTP against a running stack — 42 assertions covering authentication, the validation rejections, every state transition, both async workloads on a real Celery worker, and the three statements. Run it against a clean database after `docker compose --profile celery up`. Service-level tests and HTTP-level tests catch different classes of defect, so the project keeps both.
+
 ## Project structure
 
 ```
@@ -98,9 +100,9 @@ apps/                # Django applications — INSTALLED_APPS entries are apps.<
   sales/             # SalesOrder + lines, confirm/ship/invoice flow (COGS + billing)
   manufacturing/     # BillOfMaterials + BOMLine, WorkOrder complete flow (backflush + rolled-up cost)
   mrp/               # MRPRun + PlannedOrder, the planning engine, plan-to-order conversion
-docs/                # ARCHITECTURE.md — module map, invariants, posting matrix, MRP algorithm
+docs/                # ARCHITECTURE.md (design), SPEC.md (contract), FEATURES.md (capability status)
 docker/              # Container entrypoint, admin bootstrap, dev server/worker launchers, healthchecks
-tools/               # unwrap-prose.py — the markdown CI gate, vendored from the hub; do not edit
+tools/               # e2e-api-smoke.sh (live API conformance) + unwrap-prose.py (markdown CI gate)
 ```
 
 ## API overview
