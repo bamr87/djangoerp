@@ -9,7 +9,7 @@ from accounts.test_helpers import create_user
 from coa.models import Account, AccountType
 from journal.models import JournalEntry, JournalLine
 
-from .models import ReportTemplate
+from .models import ReportTemplate, SavedReport
 from .report_generators import generate_balance_sheet, generate_trial_balance
 
 
@@ -54,6 +54,23 @@ class SavedReportTests(APITestCase):
             'parameters': {'as_of_date': '2026-03-31'},
         }, format='json')
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+    def test_regenerate_actually_saves_decimal_result_data(self):
+        # Regression test: result_data/parameters must use DjangoJSONEncoder.
+        # report_generators.py returns raw Decimal values from DB aggregates, and the
+        # plain JSON encoder (JSONField's default) can't serialize them — this used to
+        # fail every report with "Object of type Decimal is not JSON serializable",
+        # caught by generate_report's try/except and silently flipped to status='failed'.
+        saved = SavedReport.objects.create(
+            template=self.template, name='TB', parameters={'as_of_date': '2026-03-31'},
+            created_by=self.user,
+        )
+        response = self.client.post(reverse('savedreport-regenerate', args=[saved.id]))
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        saved.refresh_from_db()
+        self.assertEqual(saved.status, 'completed')
+        self.assertEqual(saved.error_message, '')
+        self.assertIn('balanced', saved.result_data)
 
     def test_list_saved_reports(self):
         response = self.client.get(reverse('savedreport-list'))

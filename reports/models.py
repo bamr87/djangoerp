@@ -1,4 +1,5 @@
 from django.contrib.auth.models import User
+from django.core.serializers.json import DjangoJSONEncoder
 from django.db import models
 
 from core.models import TimestampMixin
@@ -23,7 +24,7 @@ class ReportTemplate(TimestampMixin):
     name = models.CharField(max_length=100)
     report_type = models.CharField(max_length=32, choices=REPORT_TYPES)
     description = models.TextField(blank=True)
-    configuration = models.JSONField(default=dict)
+    configuration = models.JSONField(default=dict, encoder=DjangoJSONEncoder)
     is_system = models.BooleanField(default=False, help_text="System templates cannot be modified by users")
     created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='report_templates')
 
@@ -43,8 +44,14 @@ class SavedReport(models.Model):
 
     template = models.ForeignKey(ReportTemplate, on_delete=models.CASCADE, related_name='saved_reports')
     name = models.CharField(max_length=100)
-    parameters = models.JSONField(default=dict)
-    result_data = models.JSONField(default=dict)
+    # DjangoJSONEncoder is required: every report_generators.py function returns
+    # Decimal values pulled straight from DB aggregates, and the plain json encoder
+    # (JSONField's default) raises "Object of type Decimal is not JSON serializable"
+    # the moment a report actually runs. Discovered via a real end-to-end run, not
+    # a review — the existing test suite never exercised this path (SavedReportTests
+    # only asserted 201 Created, never read result_data back).
+    parameters = models.JSONField(default=dict, encoder=DjangoJSONEncoder)
+    result_data = models.JSONField(default=dict, encoder=DjangoJSONEncoder)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='generating')
     error_message = models.TextField(blank=True)
     created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='saved_reports')
