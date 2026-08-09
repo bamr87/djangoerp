@@ -100,3 +100,36 @@ class PurchaseOrderFlowTests(APITestCase):
         services.receive_purchase_order(po, user=self.user)
         with self.assertRaises(Exception):
             services.cancel_purchase_order(po, user=self.user)
+
+    def test_receive_via_api_marks_order_fully_received(self):
+        """Regression: receiving through the action endpoint must reach 'received'.
+
+        PurchaseOrderViewSet prefetches `lines`, so a roll-up reading
+        `order.lines.all()` is served the prefetch cache and reports the
+        pre-receipt quantities, stranding a fully received order at
+        `partially_received`. See the sales-side twin of this test.
+        """
+        po = self.make_po('10')
+        services.confirm_purchase_order(po, user=self.user)
+
+        response = self.client.post(reverse('purchaseorder-receive', args=[po.id]), {}, format='json')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        po.refresh_from_db()
+        self.assertEqual(po.status, 'received')
+        self.assertEqual(po.lines.first().open_quantity, Decimal('0.000'))
+
+    def test_partial_receipt_via_api_stays_partially_received(self):
+        """The same roll-up must still report a genuine partial receipt honestly."""
+        po = self.make_po('10')
+        services.confirm_purchase_order(po, user=self.user)
+        line = po.lines.first()
+
+        response = self.client.post(
+            reverse('purchaseorder-receive', args=[po.id]), {'receipts': {str(line.id): '4'}}, format='json',
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        po.refresh_from_db()
+        self.assertEqual(po.status, 'partially_received')
+        self.assertEqual(po.lines.first().open_quantity, Decimal('6.000'))

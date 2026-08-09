@@ -110,7 +110,11 @@ def receive_purchase_order(order, user=None, receipts=None, receipt_date=None):
             source_reference=f'grn:{grn_number}',
         )
 
-        order.status = 'received' if all(line.open_quantity <= 0 for line in order.lines.all()) \
+        # Roll the status up from the line objects mutated above, not from
+        # order.lines.all(): the viewset's queryset prefetches `lines`, so on an
+        # order that arrived via get_object() that manager call is served from the
+        # prefetch cache and still reports the pre-receipt quantities.
+        order.status = 'received' if all(line.open_quantity <= 0 for line in lines) \
             else 'partially_received'
         order.save(update_fields=['status', 'updated_at'])
         log_event(user, 'purchase_order.receive', order, {

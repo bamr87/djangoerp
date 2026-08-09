@@ -102,3 +102,42 @@ class SalesOrderFlowTests(APITestCase):
         self.assertEqual(so.status, 'partially_shipped')
         line.refresh_from_db()
         self.assertEqual(line.open_quantity, Decimal('3.000'))
+
+    def test_ship_via_api_marks_order_fully_shipped(self):
+        """Regression: shipping through the action endpoint must reach 'shipped'.
+
+        SalesOrderViewSet prefetches `lines`, so `get_object()` hands the service an
+        order whose related manager is backed by a prefetch cache. A status roll-up
+        that re-reads `order.lines.all()` gets the pre-shipment quantities and parks a
+        fully shipped order at `partially_shipped`, which then fails to invoice. The
+        service-level tests above never see it because they pass a plain instance.
+        """
+        self.stock_widgets('5', '70')
+        so = self.make_so('5')
+        services.confirm_sales_order(so, user=self.user)
+
+        response = self.client.post(reverse('salesorder-ship', args=[so.id]), {}, format='json')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        so.refresh_from_db()
+        self.assertEqual(so.status, 'shipped')
+        self.assertEqual(so.lines.first().open_quantity, Decimal('0.000'))
+
+        invoiced = self.client.post(reverse('salesorder-invoice', args=[so.id]), {}, format='json')
+        self.assertEqual(invoiced.status_code, status.HTTP_201_CREATED)
+
+    def test_partial_shipment_via_api_stays_partially_shipped(self):
+        """The same roll-up must still report a genuine partial shipment honestly."""
+        self.stock_widgets('5', '70')
+        so = self.make_so('5')
+        services.confirm_sales_order(so, user=self.user)
+        line = so.lines.first()
+
+        response = self.client.post(
+            reverse('salesorder-ship', args=[so.id]), {'shipments': {str(line.id): '2'}}, format='json',
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        so.refresh_from_db()
+        self.assertEqual(so.status, 'partially_shipped')
+        self.assertEqual(so.lines.first().open_quantity, Decimal('3.000'))
