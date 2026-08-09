@@ -48,6 +48,11 @@ docker compose run --rm -e RUN_MIGRATIONS=0 web python manage.py test
 docker compose run --rm -e RUN_MIGRATIONS=0 web python -m pytest
 docker compose exec web python manage.py demo_erp
 
+# live API conformance — same loops as demo_erp, but over HTTP through DRF, which is
+# where serializer/permission/prefetch behaviour becomes observable. Needs a clean
+# database (it exits 2 rather than cascading 400s if it finds one dirty):
+bash tools/e2e-api-smoke.sh
+
 docker compose down -v                  # stop and drop the database volume
 ```
 
@@ -76,6 +81,9 @@ Debugging is attach-based: press F5 on **Docker: Attach to Django**. Its `preLau
 | `apps/manufacturing/` | `BillOfMaterials`/`BOMLine` (cycle-checked), `WorkOrder` and `services.py` (completion backflushes components and receives the finished good at rolled-up cost) |
 | `apps/mrp/` | `MRPRun`/`PlannedOrder`, `engine.py` (the planning algorithm, a Celery task) and `services.convert_run` (planned orders → draft POs/WOs) |
 | `docs/ARCHITECTURE.md` | Module map, invariants, GL posting matrix, MRP algorithm, adopted open-source patterns + licensing rationale |
+| `docs/SPEC.md` | The normative contract: role/permission matrix, data dictionary, numbering, ledger and state-machine contracts, validation rejections, async contract, config and the verification gates |
+| `docs/FEATURES.md` | Capability status (Verified/Tested/Partial/Absent) per feature, each anchored to the code that implements it and the test that pins it, plus the ranked gap list |
+| `tools/e2e-api-smoke.sh` | Live API conformance run — drives the whole business loop over HTTP against a running stack. Catches what service-level tests structurally cannot; needs a clean database and exits 2 if it finds one dirty |
 | `tools/unwrap-prose.py` | Vendored from the hub; do not edit — it is the markdown CI gate |
 | `Dockerfile` | Multi-stage image: `base` → `dev` (debugpy) and `base` → `prod` (gunicorn + collected static) |
 | `docker-compose.yml` | Local stack — `web`, `db` (PostgreSQL), `redis`, and `worker` behind the `celery` profile |
