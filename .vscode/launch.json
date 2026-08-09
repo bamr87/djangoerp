@@ -39,7 +39,7 @@
         },
         {
             // Attach to the Celery worker from the `celery` compose profile.
-            // Worth it for mrp/engine.py and reports/report_generators.py when
+            // Worth it for apps/mrp/engine.py and apps/reports/report_generators.py when
             // you want them running as real async tasks rather than eagerly.
             "name": "Docker: Attach to Celery worker",
             "type": "debugpy",
