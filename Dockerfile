@@ -8,7 +8,7 @@
 # Python 3.12 matches the requirements.txt floor and the shared hub CI matrix;
 # Django 6.1 dropped 3.11.
 
-FROM python:3.12-slim AS base
+FROM python:3.14-slim AS base
 
 ENV PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
