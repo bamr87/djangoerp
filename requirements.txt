@@ -1,7 +1,7 @@
 # Python floor: 3.12 (Django 6.x dropped 3.11; the shared hub CI runs 3.12 by default).
 
 # Core Django
-Django==6.1
+Django==6.1.1
 djangorestframework==3.18.0
 djangorestframework-simplejwt==5.5.1
 drf-yasg==1.21.15
