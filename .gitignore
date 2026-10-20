@@ -7,3 +7,6 @@ db.sqlite3
 staticfiles/
 celerybeat-schedule
 celerybeat.pid
+
+# OS noise
+.DS_Store
