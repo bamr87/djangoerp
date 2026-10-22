@@ -1,5 +1,7 @@
 # DjangoERP architecture
 
+> How DjangoERP is put together: the module map and dependency direction, the invariants that hold it together, the GL posting matrix, the MRP algorithm, and which open-source designs were adopted and why.
+
 DjangoERP is built outward from a double-entry accounting core into a modular ERP with end-to-end order-to-cash, procure-to-pay and make-to-stock processing plus a bare-minimum-but-credible MRP planning engine. This document maps the modules, the invariants that hold the system together, the GL posting matrix, the planning algorithm, and the open-source systems whose designs were deliberately adopted.
 
 ## Module map and dependency direction
