@@ -1,0 +1,73 @@
+# =============================================================================
+# features/features.yml — THE FEATURE INDEX for bamr87/djangoerp
+# =============================================================================
+# kit: verify v0.1.0 · governance v0.1.0 (bamr87/bamr87 templates/verify/, templates/governance/)
+#
+# One entry per user-facing capability, grounded in this repo's PRD, README and
+# code: what it does, where it lives (`link`), where it is explained (`docs`),
+# its `status` (shipped | partial | planned | deprecated | tbd) and the PRD
+# requirements it serves (`prd:`; TBD = not yet traced). Ids are STABLE: never
+# renumber or reuse one. The PRD's "Feature catalog" block is generated from
+# this file — edit here, then run:
+#   python3 <bamr87/bamr87>/tools/governance_lint.py prd-sync . --write
+# Validate: python3 <hub>/tools/governance_lint.py check .  ·  <hub>/tools/features_index.py check .
+# Schema: features/v1 (field reference: bamr87/bamr87 templates/verify/features.template.yml)
+# =============================================================================
+schema: features/v1
+repo: bamr87/djangoerp
+
+features:
+  - id: DJERP-001
+    title: "Apps: accounts, coa, company, core, journal, invoices,…"
+    description: "Apps: accounts, coa, company, core, journal, invoices, reports, partners, products, inventory, purchasing, sales, manufacturing, mrp"
+    implemented: true
+    status: shipped
+    prd: [TBD]
+    surface: ui
+    link: "djangoerp/urls.py"
+    docs: "README.md"
+  - id: DJERP-002
+    title: "Multi-warehouse stock ledger with moving-average costing"
+    description: "Multi-warehouse stock ledger with moving-average costing"
+    implemented: true
+    status: shipped
+    prd: [TBD]
+    surface: infra
+    link: "inventory/models.py"
+    docs: "README.md"
+  - id: DJERP-003
+    title: "BOMs, work orders and an MRP planning engine"
+    description: "BOMs, work orders and an MRP planning engine"
+    implemented: true
+    status: shipped
+    prd: [TBD]
+    surface: infra
+    link: "mrp/engine.py"
+    docs: "README.md"
+  - id: DJERP-004
+    title: "Async financial reports via Celery"
+    description: "Async financial reports via Celery"
+    implemented: true
+    status: shipped
+    prd: [TBD]
+    surface: infra
+    link: "djangoerp/celery.py"
+    docs: "README.md"
+  - id: DJERP-005
+    title: "Swagger/ReDoc API docs"
+    description: "Swagger/ReDoc API docs"
+    implemented: true
+    status: shipped
+    prd: [TBD]
+    surface: api
+    link: "djangoerp/urls.py"
+    docs: "README.md"
+  - id: DJERP-006
+    title: "Docker / docker-compose with PostgreSQL"
+    description: "Docker / docker-compose with PostgreSQL"
+    implemented: true
+    status: shipped
+    prd: [TBD]
+    surface: infra
+    link: "docker-compose.yml"
+    docs: "README.md"
