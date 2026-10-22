@@ -7,6 +7,7 @@ the fix is always `python3 tools/gen_api_routes.py --write`, never a hand edit.
 Runs under both `python manage.py test` and `python -m pytest`.
 """
 import importlib.util
+import unittest
 from pathlib import Path
 
 from django.test import SimpleTestCase
@@ -21,6 +22,9 @@ def _generator():
     return module
 
 
+# The image build excludes docs/ (.dockerignore); the compose services bind-mount
+# the checkout, so this only skips in a bare image, never in CI or local runs.
+@unittest.skipUnless((ROOT / 'docs').is_dir(), 'no docs/ in this tree (built image)')
 class GeneratedRouteReferenceTests(SimpleTestCase):
     def test_reference_is_current(self):
         self.assertFalse(
