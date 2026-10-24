@@ -1,8 +1,8 @@
 # PRD — djangoerp
 
-> Product requirements for [`bamr87/djangoerp`](https://github.com/bamr87/djangoerp).
-> Derived from the README, agent docs, config and code in this repo. Anything not
-> stated in those sources is marked **TBD**; success metrics are proposals.
+> Product requirements for DjangoERP — the problem, target users, goals, current features and open questions — with anything the sources do not state marked TBD.
+
+Derived from the README, agent docs, config and code in [`bamr87/djangoerp`](https://github.com/bamr87/djangoerp). Anything not stated in those sources is marked **TBD**; success metrics are proposals. Open work is tracked in [GitHub Issues](https://github.com/bamr87/djangoerp/issues), the backlog of record.
 
 ## 1. Overview / problem
 
@@ -55,8 +55,7 @@ A Django 6 + Django REST Framework ERP built outward from a double-entry account
 ## 7. Roadmap / open questions
 
 - Multi-currency, tax and localization scope: TBD
-- No AGENTS.md in this repo (CLAUDE.md is the agent guide)
 
 ## 8. Links
 
-- [README.md](README.md) · [CLAUDE.md](CLAUDE.md) · [CHANGELOG.md](CHANGELOG.md) · [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)
+- [README.md](README.md) · [AGENTS.md](AGENTS.md) · [CHANGELOG.md](CHANGELOG.md) · [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) · [API routes](docs/reference/api-routes.md)
