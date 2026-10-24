@@ -23,6 +23,7 @@ Start with the [root README](../README.md) for setup and the ERP loop, and [AGEN
 | --- | --- |
 | [`docs/ARCHITECTURE.md`](ARCHITECTURE.md) | How DjangoERP is put together: the module map and dependency direction, the invariants that hold it together, the GL posting matrix, the MRP algorithm, and which open-source designs were adopted and why. |
 | [`docs/DOCKER.md`](DOCKER.md) | How to run DjangoERP in Docker against PostgreSQL and Redis, which ports it publishes and why they stay on loopback, and how to attach the VS Code debugger to the web, worker and one-shot containers. |
+| [`docs/adr/`](adr/README.md) | This directory records decisions for djangoerp that are hard to reverse: the stack, data model, security model, public interfaces, and any relaxation of a gate. |
 
 ### `docs/reference/`
 
