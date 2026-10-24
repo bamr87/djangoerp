@@ -19,7 +19,7 @@ pytest==9.1.1
 pytest-django==4.13.0
 
 # Development tools
-black==26.5.1
+black==26.10.1
 flake8==7.3.0
 isort==8.0.1
 
