@@ -27,6 +27,12 @@ class BillOfMaterialsSerializer(serializers.ModelSerializer):
             'lines', 'created_by', 'created_at', 'updated_at',
         ]
         read_only_fields = ['created_by', 'created_at', 'updated_at']
+        # DRF >= 3.18.2 derives a UniqueTogetherValidator from the conditional
+        # `one_active_bom_per_product` constraint, which runs before validate()
+        # and answers with a generic "must make a unique set" error. validate()
+        # enforces the same rule with an actionable message, and the database
+        # constraint still backs it.
+        validators = []
 
     def validate(self, data):
         product = data.get('product', getattr(self.instance, 'product', None))
