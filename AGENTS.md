@@ -1,166 +1,141 @@
-# CLAUDE.md
+<!-- kit: sdlc v0.1.0 · AGENTS.md is the CANONICAL agent instructions file (decision D4, UPS-AGENT-07/08). -->
 
-Guidance for AI coding agents (Claude Code, Copilot, Cursor) working in **djangoerp**.
+# djangoerp
 
-DjangoERP is a Django 6 + Django REST Framework ERP built outward from a double-entry accounting core into a modular enterprise system with end-to-end order-to-cash, procure-to-pay and make-to-stock processing plus an MRP planning engine. The financial core — chart of accounts, journal entries, invoices/payments, and async financial reports — was consolidated here from `amrs-project` (AMRS), the most mature of three overlapping accounting prototypes found across the fleet (`amrs-project`, `afms`, `amrs-django`); the supply-chain/planning modules re-implement patterns from ERPNext, Odoo, Tryton, InvenTree and frePPLe (designs only, no copyleft code — see `docs/ARCHITECTURE.md`). A change is "done" here when `python manage.py check` is clean, `makemigrations --check` reports no drift, `python manage.py test` and `python -m pytest` both pass, `python manage.py demo_erp` still ends balanced, and the nearest `README.md` reflects the change.
+> Modular Django REST ERP: double-entry accounting, inventory, purchasing, sales, manufacturing and MRP planning.
+
+## What this repo is
+
+DjangoERP is a Django 6 + DRF ERP built outward from a double-entry accounting core into order-to-cash, procure-to-pay and make-to-stock processing plus an MRP planning engine. The financial core was consolidated from `amrs-project` (AMRS), the most mature of the fleet's three accounting prototypes (`amrs-project`, `afms`, `amrs-django`); the supply-chain and planning modules re-implement designs from ERPNext, Odoo, Tryton, InvenTree and frePPLe, with no copyleft code ([docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)). A change is **done** when `python manage.py check` is clean, `makemigrations --check` reports no drift, `python manage.py test` and `python -m pytest` both pass, `python manage.py demo_erp` still ends balanced, the generated route reference is current, and the nearest `README.md` reflects the change.
 
 ## Stack & commands
 
-Python 3.12+ (Django 6 dropped 3.11; the shared hub CI runs 3.12), Django 6.1, DRF, SimpleJWT, drf-yasg (Swagger/ReDoc), django-filter, Celery + Redis, PostgreSQL in production / SQLite by default in dev. Dependencies are pinned exact in `requirements.txt` — when bumping them, the whole verification loop below plus `demo_erp` is the acceptance gate.
+Python 3.12+ (Django 6 dropped 3.11; the hub's shared CI runs 3.12), Django 6.1, DRF, SimpleJWT, drf-yasg (Swagger/ReDoc), django-filter, Celery + Redis, PostgreSQL in production and SQLite by default in dev. Dependencies are pinned exact in `requirements.txt`; when bumping them, the whole loop below plus `demo_erp` is the acceptance gate.
 
 ```bash
-# install dependencies:
+# install
 python3.12 -m venv .venv && source .venv/bin/activate && pip install -r requirements.txt
 cp .env.example .env
 
-# bootstrap the database — migrations are committed, unlike every source repo this was ported from:
+# run on http://localhost:8000/ (migrations are committed)
 python manage.py migrate
 python manage.py createsuperuser
+python manage.py runserver
 
-# run the dev server:
-python manage.py runserver           # http://localhost:8000/
-
-# run tests (both work out of the box; pytest-django is configured in pyproject.toml):
+# test
 python manage.py test
 python -m pytest
 
-# lint:
+# lint and verify
 flake8 --max-line-length=120 --exclude=.venv,migrations .
-isort .                              # configured in pyproject.toml (line_length=120, first-party apps)
-black .                              # installed but unconfigured — scope any black run to files you touched
-python3 tools/unwrap-prose.py --check # markdown one-paragraph-per-line gate (CI enforces it)
-
-# sanity check:
 python manage.py check
-python manage.py makemigrations --check --dry-run   # fails if a model change needs a new migration
+python manage.py makemigrations --check --dry-run
+python manage.py demo_erp
 ```
 
-Docker is the alternative to the venv above — it runs the app on PostgreSQL and Redis instead of the SQLite/eager-Celery defaults, which is the point of reaching for it. The entrypoint migrates on every start.
+More, as needed:
 
 ```bash
-docker compose up                       # web + postgres + redis, autoreload, no debugger
-docker compose --profile celery up      # ...plus a real Celery worker (dispatches for real)
+isort .                                    # configured in pyproject.toml (line_length=120, first-party apps)
+black <files you touched>                  # installed but unconfigured: never reformat whole files
+python3 tools/gen_api_routes.py --write    # regenerate docs/reference/api-routes.md (--check to verify)
+python3 tools/docs_index.py --write        # regenerate the docs/README.md index
+python3 tools/unwrap-prose.py --check      # markdown: one paragraph per line (--write to fix)
+
+# Docker: the app on PostgreSQL + Redis instead of SQLite + eager Celery; the entrypoint migrates on every start
+docker compose up                                  # web + postgres + redis, autoreload, no debugger
+docker compose --profile celery up                 # ...plus a real Celery worker
 DEBUGPY_ENABLE=1 docker compose up -d --wait web   # what VS Code's preLaunchTask runs
-
-# the verification loop, in the container:
-docker compose exec web sh -c 'python manage.py check && python manage.py makemigrations --check --dry-run'
-docker compose run --rm -e RUN_MIGRATIONS=0 web python manage.py test
-docker compose run --rm -e RUN_MIGRATIONS=0 web python -m pytest
-docker compose exec web python manage.py demo_erp
-
-docker compose down -v                  # stop and drop the database volume
+docker compose run --rm -e RUN_MIGRATIONS=0 web python manage.py test   # the loop in a container: docs/DOCKER.md
+docker compose down -v                             # stop and drop the database volume
 ```
 
-The entrypoint seeds the admin account from `.env` (`DJANGO_SUPERUSER_*`, default `djangoerp`/`djangoerp`) via `docker/bootstrap-admin.py`, superuser plus `UserRole` row, idempotent and never resetting an existing password. Published ports bind to `127.0.0.1` — an open debugpy port is remote code execution and the stack ships a known password; `BIND_HOST` opts out.
+Docker gotchas (details in [docs/DOCKER.md](docs/DOCKER.md)):
 
-Debugging is attach-based: press F5 on **Docker: Attach to Django**. Its `preLaunchTask` starts the stack with debugpy enabled and blocks on the compose healthcheck, so attach cannot race startup. Debug mode runs `runserver --noreload` on purpose — Django's autoreloader forks a child to serve requests while the debugger stays attached to the parent, so breakpoints would never hit. Editing `docker/*.sh` needs a `docker compose build`; those are baked into the image, unlike the source tree, which is bind-mounted.
+- The entrypoint seeds the admin from `.env` (`DJANGO_SUPERUSER_*`, default `djangoerp`/`djangoerp`) via `docker/bootstrap-admin.py`: superuser plus `UserRole` row, idempotent, never resetting an existing password.
+- Ports bind to `127.0.0.1` because an open debugpy port is remote code execution and the stack ships a known password; `BIND_HOST` opts out.
+- Debugging attaches (F5, **Docker: Attach to Django**; the `preLaunchTask` blocks on the healthcheck). Debug mode runs `runserver --noreload` on purpose — the autoreloader's child serves requests, so breakpoints would never hit.
+- Editing `docker/*.sh` needs `docker compose build`; the source tree is bind-mounted, those scripts are baked in.
 
 ## Layout
 
 | Path | Role |
 | --- | --- |
-| `djangoerp/` | Project package: `settings/` (base/dev/prod split), root `urls.py`, `celery.py`, WSGI/ASGI |
-| `core/` | Shared platform: `TimestampMixin`, `DocumentSequence` (atomic document numbering — always claim numbers via `DocumentSequence.next_number(prefix)`), `core/audit.py` (`log_event`, the audit-trail writer used by every service transition), `core/demo.py` + the `demo_erp` management command, and `core/tests.py` (the end-to-end integration suite) |
-| `company/` | `Company` — the legal entity whose books this installation keeps — plus the browser-facing landing page and the `/health/` probe. Deliberately *not* in `core/`: `core` stays infrastructure-only. Its `urls.py` is the DRF router (`/api/company/`); `urls_web.py` owns the site root |
-| `accounts/` | `UserRole` (admin/accountant/viewer/auditor, `OneToOne` to `django.contrib.auth.User`) + `AuditLog`, JWT login view, and the shared DRF permission classes |
-| `coa/` | Chart of accounts: `AccountType` and the self-referencing `Account` tree |
-| `journal/` | `JournalEntry` header + `JournalLine` rows — the double-entry ledger — plus `services.post_entry`, the one programmatic write path for system postings |
-| `invoices/` | `Invoice`, `InvoiceLineItem`, `Payment` — AR, with `services.post_invoice`/`post_payment` GL posting |
-| `reports/` | `ReportTemplate` + `SavedReport` models, viewsets, and `report_generators.py` (the Celery task and all report math) |
-| `partners/` | `BusinessPartner` — customer and/or supplier flags on one row, with AR/AP control-account FKs |
-| `products/` | `UnitOfMeasure`, `ProductCategory` (inventory/revenue/COGS account mappings), `Product` (buy/make `procurement_type`, standard cost, lead time, safety stock, lot sizing) |
-| `inventory/` | `Warehouse`, `StockMove` (the append-only stock ledger), `StockLevel` (cached on-hand + moving-average cost), `services.py` (`create_move`/`complete_move`/`rebuild_stock_levels`) |
-| `purchasing/` | `PurchaseOrder`/`PurchaseOrderLine` and `services.py` (confirm/receive/cancel; receipt posts Dr Inventory / Cr supplier payable) |
-| `sales/` | `SalesOrder`/`SalesOrderLine` and `services.py` (confirm/ship/invoice/cancel; shipping posts Dr COGS / Cr Inventory) |
-| `manufacturing/` | `BillOfMaterials`/`BOMLine` (cycle-checked), `WorkOrder` and `services.py` (completion backflushes components and receives the finished good at rolled-up cost) |
-| `mrp/` | `MRPRun`/`PlannedOrder`, `engine.py` (the planning algorithm, a Celery task) and `services.convert_run` (planned orders → draft POs/WOs) |
-| `docs/ARCHITECTURE.md` | Module map, invariants, GL posting matrix, MRP algorithm, adopted open-source patterns + licensing rationale |
-| `tools/unwrap-prose.py` | Vendored from the hub; do not edit — it is the markdown CI gate |
-| `Dockerfile` | Multi-stage image: `base` → `dev` (debugpy) and `base` → `prod` (gunicorn + collected static) |
-| `docker-compose.yml` | Local stack — `web`, `db` (PostgreSQL), `redis`, and `worker` behind the `celery` profile |
-| `docker/` | Container entrypoint, admin bootstrap, dev server/worker launchers, and the healthcheck scripts compose probes |
-| `.vscode/` | `launch.json` (attach configurations, Docker and local) and `tasks.json` (the compose plumbing they call) |
+| `djangoerp/` | Project package: `settings/` (base/dev/prod), root `urls.py`, `celery.py`, WSGI/ASGI |
+| `core/` | `TimestampMixin`, `DocumentSequence` (claim numbers only via `DocumentSequence.next_number(prefix)`), `audit.py` (`log_event`), `demo.py` + `demo_erp`, and `tests.py` (the end-to-end suite) |
+| `company/` | `Company` (the legal entity whose books these are), the landing page and `/health/` — kept out of `core/`, which stays infrastructure-only |
+| `accounts/` | `UserRole` (admin/accountant/viewer/auditor), `AuditLog`, JWT login, the shared permission classes |
+| `coa/`, `journal/` | Chart of accounts (`AccountType`, self-referencing `Account`); the double-entry ledger and `services.post_entry` |
+| `invoices/`, `reports/` | AR (`Invoice`, `Payment`, GL posting services); `ReportTemplate`/`SavedReport` and `report_generators.py` (all report math) |
+| `partners/`, `products/` | `BusinessPartner` with AR/AP control accounts; `UnitOfMeasure`, `ProductCategory` (GL mappings), `Product` (buy/make, MRP parameters) |
+| `inventory/` | `Warehouse`, `StockMove` (append-only stock ledger), `StockLevel` (cached on-hand + moving-average cost) |
+| `purchasing/`, `sales/`, `manufacturing/` | Document flows: receipts post Dr Inventory / Cr payable; shipments post Dr COGS / Cr Inventory; work-order completion backflushes at rolled-up cost |
+| `mrp/` | `MRPRun`/`PlannedOrder`, `engine.py` (the planner, a Celery task), `services.convert_run` (planned orders → draft POs/WOs) |
+| `docs/` | [`ARCHITECTURE.md`](docs/ARCHITECTURE.md) (module map, invariants, posting matrix, MRP algorithm, adopted patterns), [`DOCKER.md`](docs/DOCKER.md), the generated [`reference/`](docs/reference/) and the [index](docs/README.md) |
+| `tools/` | `gen_api_routes.py`; `docs_index.py` and `unwrap-prose.py` are vendored from the hub — do not edit |
+| `Dockerfile`, `docker-compose.yml`, `docker/`, `.vscode/` | The image (`dev` with debugpy, `prod` with gunicorn), the `web`/`db`/`redis`/`worker` stack, its scripts, and the attach configurations |
 
-Each app owns `apps.py`, `models.py`, `migrations/`, and usually `serializers.py`, `views.py`, `urls.py`, `admin.py`, `tests.py` — unlike the source repos this was ported from, apps here have committed migrations and real tests from the start. Document apps additionally own a `services.py` holding their state transitions.
-
-## URL map
-
-Every app exposes a DRF `DefaultRouter` from its own `urls.py`, included by `djangoerp/urls.py` under an `/api/<area>/` prefix.
-
-| Prefix | Routes |
-| --- | --- |
-| `/api/auth/` | `login/` (JWT obtain, returns user + role), `refresh/`, `users/`, `roles/`, `audit-logs/` |
-| `/api/coa/` | `accounts/`, `accounts/hierarchy/`, `account-types/` |
-| `/api/journal/` | `entries/`, `lines/` (read-only) |
-| `/api/invoices/` | `invoices/`, `payments/`, both with `{id}/post/` GL posting actions |
-| `/api/reports/` | `templates/`, `saved-reports/`, `saved-reports/{id}/regenerate/` |
-| `/api/partners/` | `partners/` |
-| `/api/products/` | `products/`, `categories/`, `uoms/` |
-| `/api/inventory/` | `warehouses/`, `stock-moves/` (+`{id}/complete/`, `{id}/cancel/`), `stock-levels/` (read-only) |
-| `/api/purchasing/` | `orders/` (+`{id}/confirm/`, `{id}/receive/`, `{id}/cancel/`) |
-| `/api/sales/` | `orders/` (+`{id}/confirm/`, `{id}/ship/`, `{id}/invoice/`, `{id}/cancel/`) |
-| `/api/manufacturing/` | `boms/`, `work-orders/` (+`{id}/confirm/`, `{id}/start/`, `{id}/complete/`, `{id}/availability/`, `{id}/cancel/`) |
-| `/api/mrp/` | `runs/` (create dispatches the engine; +`{id}/convert/`), `planned-orders/` (read-only +`{id}/cancel/`) |
-| `/api/company/` | `companies/` |
-| — | `/`, `/health/` (from `company/urls_web.py`), `/admin/`, `/swagger/`, `/redoc/`, `/swagger.json` |
-
-## Domain rules that must not be broken
-
-These were verified and hard-won in `amrs-project`; do not regress them during the port or in later consolidation passes (see amrs-project's own CLAUDE.md and amrs-django's `reports/generators/balance_sheet.py` gap for what happens when they are).
-
-- **Double entry.** `JournalEntrySerializer.validate` rejects entries whose debits and credits differ, and entries with no lines. Any new write path into `JournalEntry` must preserve that; lines are created and replaced wholesale through the nested `lines` serializer.
-- **Only posted entries count.** Every report generator filters `entry__status='posted'`. `JournalEntry.status` has real choices (`draft`/`posted`/`voided`) — this was a bare unconstrained `CharField` in `amrs-project`; it was fixed during the port. Keep using the choices rather than inventing new magic strings.
-- **Account type codes are load-bearing.** `report_generators.py` hard-codes the two-letter `AccountType.code` values `AS`, `LI`, `EQ`, `RE`, `EX` to decide normal balance and report sections. `coa`'s `0002_seed_account_types` data migration seeds exactly these five on every fresh database — do not remove or rename them without updating every report generator.
-- **Normal balances.** Assets and expenses are debit-normal; liabilities, equity, and revenue are credit-normal. `calculate_account_balances` applies that signing, and the balance sheet and income statement build on it. `generate_trial_balance` deliberately does *not*: a trial balance lists raw debit-minus-credit balances so the two columns agree. Do not "fix" it back to normal-balance signing — that pushes credit-normal accounts into the debit column and makes `balanced` permanently false.
-- **The balance sheet folds open P&L into equity.** Revenue and expense accounts stay open until a closing entry moves them to retained earnings, so `generate_balance_sheet` adds `current_period_earnings` (revenue minus expenses as of the report date) to `total_equity` and reports it as its own field. `amrs-django`'s rewrite of this report dropped that fold-in and its balance sheet never foots for any book with posted P&L — `reports/tests.py::ReportGeneratorTests` pins this behavior, keep it passing.
-- **Roles come from `accounts/permissions.py`.** Reuse `IsAdmin`, `IsAdminOrSelf`, `IsAccountant` (admin implied), `IsAuditor` (admin implied). They all read `request.user.role.role` inside `try/except AttributeError`, so a user with no `UserRole` row is denied rather than crashing. Do not re-implement role checks inline in a viewset.
-- **A superuser is not an API user.** `UserRole` has no auto-creating signal, and every permission class reads `request.user.role.role` inside `try/except AttributeError`, so an account made by `manage.py createsuperuser` can open `/admin/` but is denied by `IsAdmin`/`IsAccountant`/`IsAuditor` everywhere. Create the `UserRole` row with the user — `docker/bootstrap-admin.py` does this for the Docker stack, `demo_erp` for the demo user.
-- **Money is `DecimalField`.** Never `FloatField`. Ledger amounts (`JournalLine.debit`/`credit`) are `max_digits=20, decimal_places=2` — wider than the `12,2` used elsewhere — to leave headroom for large-scale postings (e.g. a future EDGAR/XBRL import, see amrs-project's `edgar` app) without another migration.
-- **The COA is a tree.** `AccountSerializer.validate` walks ancestors to reject cycles; `Account.parent_account` is `PROTECT`, as is `Account.account_type`.
-- **Posted history is immutable.** A posted journal entry can only be voided (`JournalEntrySerializer` enforces it); a done stock move, posted invoice or posted payment rejects edits. Corrections are reversing entries and opposing moves, never edits.
-- **System postings go through `journal.services.post_entry`.** It enforces balance, quantizes to the cent, numbers entries from the `JE` sequence, and is idempotent per `source_reference` (unique column — one business event, one entry). Never create system journal entries with raw ORM calls.
-- **Only done stock moves count.** The stock ledger mirrors the journal: `StockMove.status` must be `'done'` to affect anything; `StockLevel` is a cache of the done-move sum, maintained under row locks by `inventory.services.complete_move` and reconstructible via `rebuild_stock_levels()`. Never write `StockLevel` directly.
-- **Moving-average costing, no negative stock.** Receipts re-weight `StockLevel.average_cost`; issues leave at the current average and raise `InsufficientStockError` rather than go negative. Completed moves snapshot `unit_cost`/`total_value`, and GL postings use exactly `move.total_value`, so the stock ledger and GL cannot drift apart.
-- **State transitions live in each app's `services.py`.** `confirm`/`receive`/`ship`/`complete`/`post`/`convert`/`cancel` are the only status writers, each transactional and audit-logged via `core.audit.log_event`. Views call services from actions; serializers reject edits on non-draft documents.
-- **Account mappings are explicit.** GL posting resolves accounts from `ProductCategory` (inventory/revenue/COGS), `BusinessPartner` (receivable/payable) and `Payment.deposit_account`, and raises a clear configuration error when one is missing — never guess or hard-code account codes in services.
-- **BOMs cannot loop, and one is active per product.** `BillOfMaterialsSerializer` walks component BOMs to reject cycles (the MRP engine's low-level-code pass would not terminate otherwise) and a partial unique constraint enforces a single active BOM per product.
-- **MRP plans only confirmed reality.** Demand is confirmed sales orders (+ open work-order components + safety stock); supply is on-hand plus confirmed purchase/work orders. Draft documents — including ones freshly converted from a run — are invisible until confirmed. Keep `OPEN_STATUSES` on the document models authoritative for this.
-
-## Architecture notes
-
-- **Auth is JWT only.** `REST_FRAMEWORK.DEFAULT_AUTHENTICATION_CLASSES` is SimpleJWT and `DEFAULT_PERMISSION_CLASSES` is `IsAuthenticated`, so every endpoint requires a bearer token unless a viewset overrides it. `CustomTokenObtainPairSerializer` enriches the login response with the user's profile and role. This was a deliberate choice over `amrs-django`'s Token auth — see the consolidation research this repo's `README.md` roadmap section links back to.
-- **Settings are split** `djangoerp/settings/{base,dev,prod}.py`, selected by whether `DJANGO_SETTINGS_MODULE` ends in `.prod` (see `djangoerp/settings/__init__.py`). `dev` runs Celery tasks eagerly and defaults to SQLite; `prod` turns on `SECURE_HSTS_*`/cookie-secure hardening that has no equivalent in `amrs-project`. Add new configuration to `base.py` as `env(...)` with a safe default, and document it in `.env.example`.
-- **Filtering and paging are global.** `DjangoFilterBackend`, `SearchFilter`, and `OrderingFilter` plus `PageNumberPagination` at `PAGE_SIZE=20` are configured project-wide, which is why viewsets can declare `filterset_fields` / `search_fields` without repeating `filter_backends`.
-- **Reports are async, and so is MRP.** `SavedReport` starts at `status='generating'`; `generate_report.delay(report.id)` in `reports/report_generators.py` dispatches on `template.report_type`, writes the payload into `result_data` as JSON, and flips status to `completed` or `failed` with `error_message`. Add a new report type by adding a choice to `ReportTemplate.REPORT_TYPES` and a branch plus generator function in `report_generators.py`. `mrp.engine.run_mrp` follows the identical pattern for `MRPRun` (`pending`/`running`/`completed`/`failed`, results in `log`). `CELERY_TASK_ALWAYS_EAGER=True` in dev settings means both run synchronously without a worker.
-- **Audit logging is wired through services.** `core.audit.log_event` writes `accounts.AuditLog` rows (as `action='update'` with the event name in `details['event']`) from every document transition — confirm, receive, ship, complete, post, convert, cancel. There is still no generic model-change middleware; CRUD on master data is not audited, only document flows. New transitions must call `log_event`.
-- **The demo is executable documentation.** `python manage.py demo_erp` runs the whole loop (plan → buy → make → ship → bill → collect) through the real services and fails if the statements don't balance; `core/tests.py::EndToEndERPFlowTests` pins the same flow with exact numbers. If a change breaks either, the change is wrong (or the docs are).
-- **EDGAR is not ported yet.** `amrs-project`'s `edgar` app (SEC/XBRL-to-ledger integration) was deliberately excluded from this first consolidation pass — see `README.md`'s roadmap. `reports/models.py` and `report_generators.py` have the `edgar_statement`/`edgar_reconciliation` report type and the EDGAR account-scoping helpers stripped out rather than left as dead code referencing a nonexistent app; restore them together with the `edgar` app itself in a later pass, not piecemeal.
-
-## Migrations
-
-Unlike every repo this was consolidated from, migrations **are** committed here from the start — every app has a real `0001_initial.py` (plus follow-ups: `coa`'s `0002_seed_account_types` data migration, `journal`'s `0002_journalentry_source_reference`, the `invoices` link migrations). Bare `python manage.py makemigrations` (no app labels needed) and `python manage.py migrate` work on a fresh checkout. Run `python manage.py makemigrations --check --dry-run` before committing a model change — CI should be treated as failing if it reports drift, even though the workflow itself is the shared hub one (see below).
+Each app owns `models.py`, `migrations/`, `tests.py` and usually `serializers.py`, `views.py`, `urls.py`, `admin.py`; document apps also own a `services.py` holding their state transitions. Each app's `DefaultRouter` is mounted under `/api/<area>/`; every route is listed in the generated [`docs/reference/api-routes.md`](docs/reference/api-routes.md).
 
 ## Conventions
 
-- Conventional Commits: `type(scope): description` (`feat`/`fix`/`docs`/`refactor`/`test`/`chore`/`ci`).
-- Default branch is `main` — branch from it and open a PR; never push to it directly.
-- README-First, README-Last: read the nearest `README.md` before changing a directory, and update it after.
-- Don't suppress type errors (`as any`, `@ts-ignore`, `# type: ignore`) or leave empty exception handlers.
-- **Markdown is one paragraph per line.** `.github/workflows/markdown-oneline.yml` fails the build on soft-wrapped prose; fix with `python3 tools/unwrap-prose.py --write`.
-- 4-space indent and a 120-column soft limit for Python, per `.editorconfig`; `black`'s default 88 columns disagrees with that, so scope any `black` run to files you touched rather than reformatting whole files.
-- API surface: one `ModelViewSet` per model, registered on a `DefaultRouter` in the app's `urls.py`. Read-only surfaces (`JournalLine`, `AuditLog`, `StockLevel`, `PlannedOrder`) use `ReadOnlyModelViewSet`. Document state transitions are `@action` endpoints delegating to `services.py` — never name an action after a bare HTTP verb (`post_to_ledger` + `url_path='post'`, not `def post`).
-- Permissions: master data (partners, products, warehouses, BOMs, COA) is writable by any authenticated user, matching `coa`; transactional documents (journal, stock moves, purchase/sales/work orders, MRP, posting actions) require `IsAccountant`, matching `journal`.
-- Business validation lives in serializer `validate()`, not in views or models; flow preconditions (state, stock, account configuration) live in `services.py` and raise DRF `ValidationError`. Nested writes (journal lines, invoice line items, order lines, BOM lines) delete-and-recreate children in `update()`, and only in draft.
-- Decimal precision for new models: quantities `12,3`, unit costs/prices `12,4`, monetary totals 2dp (ledger lines stay `20,2`). Quantize GL amounts to the cent with `Decimal('0.01')` before posting.
-- Ownership fields are set server-side: `perform_create(serializer.save(created_by=self.request.user))` in views, or `validated_data['created_by'] = self.context['request'].user` in serializers. Always mark `created_by` read-only.
-- New models that have both `created_at` and `updated_at` should subclass `core.models.TimestampMixin` rather than redeclaring the two fields.
-- `.github/workflows/ci.yml` is a thin caller into the hub's shared `standard-ci.yml` — the gate logic is not in this repo, so don't try to edit it here.
+- **Backlog of record:** GitHub Issues with the fleet labels. Pick up issues labelled `agent:ready`; never touch `agent:hold` or `human-review`.
+- **Definition of Done:** the fleet default pull request template (inherited; none here) plus the done-criteria above.
+- **Decisions:** ADRs in `docs/adr/NNNN-slug.md`, indexed in `docs/adr/README.md` — none recorded yet; the first one creates the directory. Add one for anything hard to reverse.
+- **Commits:** Conventional Commits (`feat fix docs style refactor test chore perf ci build`). The PR title is the squash subject.
+- **Branches:** `feature/`, `fix/`, `docs/`, `refactor/`, `test/` or `chore/` off `main`; open a PR.
+- **Changelog:** `CHANGELOG.md` (Keep a Changelog) records notable changes.
+- **Never:** push to `main` directly, commit lockfiles or secrets, suppress type errors (`as any`, `@ts-ignore`, `# type: ignore`), leave empty exception handlers, or edit generated files by hand (`docs/reference/api-routes.md`, the `docs/README.md` index span).
+- **README-First, README-Last:** read the nearest `README.md` before changing a directory; update it after.
+- **Markdown:** one paragraph per line (`markdown-oneline.yml`; fix with `python3 tools/unwrap-prose.py --write`).
+- **Python:** 4-space indent, 120-column limit (`.editorconfig`); `black`'s default 88 disagrees, so scope it to files you touched.
+- **API surface:** one `ModelViewSet` per model; read-only surfaces (`JournalLine`, `AuditLog`, `StockLevel`, `PlannedOrder`) use `ReadOnlyModelViewSet`. Transitions are `@action` endpoints delegating to `services.py`, never named after an HTTP verb (`post_to_ledger` + `url_path='post'`, not `def post`). After changing a route or view docstring, run `python3 tools/gen_api_routes.py --write` (`core/test_docs_reference.py` fails while it is stale).
+- **Permissions:** master data (partners, products, warehouses, BOMs, COA) is writable by any authenticated user, like `coa`; transactional documents (journal, stock moves, orders, MRP, posting actions) require `IsAccountant`, like `journal`.
+- **Validation:** business rules in serializer `validate()`, not views or models; flow preconditions (state, stock, account configuration) in `services.py`, raising DRF `ValidationError`. Nested writes (journal, invoice, order and BOM lines) delete and recreate children in `update()`, only in draft.
+- **Decimal precision** for new models: quantities `12,3`, unit costs/prices `12,4`, monetary totals 2 dp (ledger lines stay `20,2`). Quantize GL amounts with `Decimal('0.01')` before posting.
+- **Ownership is server-side:** set `created_by` in `perform_create` or from `self.context['request'].user`, and keep it read-only. Models with `created_at` + `updated_at` subclass `core.models.TimestampMixin`.
+- **Migrations are committed** (a real `0001_initial.py` per app, plus `coa`'s `0002_seed_account_types` data migration). Run `makemigrations --check --dry-run` before committing a model change; treat drift as a CI failure.
+- `.github/workflows/ci.yml` is a thin caller of the hub's `standard-ci.yml` — the gate logic is not here, so don't edit it.
+
+## Domain rules that must not be broken
+
+Hard-won in `amrs-project`; never regress them (`amrs-django`'s `reports/generators/balance_sheet.py` shows what happens when you do).
+
+- **Double entry.** `JournalEntrySerializer.validate` rejects unbalanced entries and entries with no lines; every new write path into `JournalEntry` must too. Lines are created and replaced wholesale through the nested `lines` serializer.
+- **Only posted entries count.** Every report generator filters `entry__status='posted'`; use the `JournalEntry.status` choices (`draft`/`posted`/`voided`), never new magic strings.
+- **Account type codes are load-bearing.** `report_generators.py` hard-codes `AccountType.code` `AS`, `LI`, `EQ`, `RE`, `EX` for normal balance and report sections, and `coa`'s `0002_seed_account_types` seeds exactly these. Don't rename or remove one without updating every generator.
+- **Normal balances.** Assets and expenses are debit-normal; liabilities, equity and revenue credit-normal. `calculate_account_balances` applies that signing; the balance sheet and income statement build on it. `generate_trial_balance` deliberately does **not** — it lists raw debit-minus-credit so the columns agree; "fixing" it makes `balanced` permanently false.
+- **The balance sheet folds open P&L into equity.** P&L accounts stay open until a closing entry, so `generate_balance_sheet` adds `current_period_earnings` (revenue minus expenses at the report date) to `total_equity` and reports it as its own field; `reports/tests.py::ReportGeneratorTests` pins it.
+- **Roles come from `accounts/permissions.py`:** `IsAdmin`, `IsAdminOrSelf`, `IsAccountant` and `IsAuditor` (both admin-implied). They read `request.user.role.role` inside `try/except AttributeError`, so a user with no `UserRole` row is denied, not crashed. Never re-implement role checks inline.
+- **A superuser is not an API user.** No signal creates `UserRole`, so a `createsuperuser` account opens `/admin/` but every role check denies it. Create the `UserRole` row with the user (as `docker/bootstrap-admin.py` and `demo_erp` do).
+- **Money is `DecimalField`, never `FloatField`.** Ledger amounts (`JournalLine.debit`/`credit`) are `20,2` — wider than the `12,2` elsewhere, leaving headroom for a future EDGAR/XBRL import.
+- **The COA is a tree.** `AccountSerializer.validate` walks ancestors to reject cycles; `Account.parent_account` and `Account.account_type` are `PROTECT`.
+- **Posted history is immutable.** A posted journal entry can only be voided; a done stock move, posted invoice or posted payment rejects edits. Correct with reversing entries and opposing moves.
+- **System postings go through `journal.services.post_entry`:** it enforces balance, quantizes to the cent, numbers from the `JE` sequence and is idempotent per unique `source_reference` (one business event, one entry). Never post with raw ORM calls.
+- **Only done stock moves count.** `StockLevel` caches the sum of `'done'` moves, maintained under row locks by `inventory.services.complete_move` and rebuildable with `rebuild_stock_levels()`. Never write `StockLevel` directly.
+- **Moving-average costing, no negative stock.** Receipts re-weight `StockLevel.average_cost`; issues leave at the current average and raise `InsufficientStockError` rather than go negative. GL postings use exactly the completed move's snapshotted `total_value`, so stock ledger and GL cannot drift.
+- **State transitions live in `services.py`.** `confirm`/`receive`/`ship`/`complete`/`post`/`convert`/`cancel` are the only status writers, each transactional and audit-logged via `core.audit.log_event`; serializers reject edits on non-draft documents.
+- **Account mappings are explicit.** Postings resolve accounts from `ProductCategory`, `BusinessPartner` and `Payment.deposit_account` and raise a clear configuration error when one is missing — never guess or hard-code account codes.
+- **BOMs cannot loop; one is active per product.** `BillOfMaterialsSerializer` rejects cycles (MRP's low-level-code pass would never terminate) and a partial unique constraint allows one active BOM per product.
+- **MRP plans only confirmed reality.** Demand: confirmed sales orders, open work-order components, safety stock. Supply: on-hand plus confirmed purchase/work orders. Drafts, including freshly converted ones, are invisible until confirmed; `OPEN_STATUSES` on the document models stays authoritative.
+
+## Architecture notes
+
+- **Auth is JWT only** (chosen over `amrs-django`'s Token auth): SimpleJWT authentication and an `IsAuthenticated` default, so every endpoint needs a bearer token unless a viewset overrides it. `CustomTokenObtainPairSerializer` adds the profile and role to the login response.
+- **Settings are split** into `djangoerp/settings/{base,dev,prod}.py`, picked by whether `DJANGO_SETTINGS_MODULE` ends in `.prod`. `dev` runs Celery eagerly and defaults to SQLite; `prod` adds `SECURE_HSTS_*`/secure-cookie hardening. New configuration goes in `base.py` as `env(...)` with a safe default, documented in `.env.example`.
+- **Filtering and paging are global:** `DjangoFilterBackend`, `SearchFilter`, `OrderingFilter` and `PageNumberPagination` (`PAGE_SIZE=20`) are project-wide, so viewsets declare `filterset_fields`/`search_fields` without repeating `filter_backends`.
+- **Reports and MRP are async.** `SavedReport` starts `generating`; `generate_report.delay()` dispatches on `template.report_type`, writes `result_data` and ends `completed` or `failed` (`error_message`). A new report type is a `ReportTemplate.REPORT_TYPES` choice plus a branch and generator in `report_generators.py`. `mrp.engine.run_mrp` does the same for `MRPRun` (results in `log`). Dev's `CELERY_TASK_ALWAYS_EAGER=True` runs both without a worker.
+- **Audit logging is wired through services.** `core.audit.log_event` writes `accounts.AuditLog` rows (`action='update'`, event name in `details['event']`) for every document transition. There is no generic model-change middleware: master-data CRUD is not audited, only document flows. New transitions must call `log_event`.
+- **The demo is executable documentation.** `demo_erp` runs plan → buy → make → ship → bill → collect through the real services and fails if the books don't balance; `core/tests.py::EndToEndERPFlowTests` pins the same flow with exact numbers. If a change breaks either, the change is wrong (or the docs are).
+- **EDGAR is not ported yet.** The `edgar_statement`/`edgar_reconciliation` report types and EDGAR account-scoping helpers were stripped with `amrs-project`'s `edgar` app; restore them together with that app, not piecemeal.
 
 ## Fleet context
 
-This repo is one of ~40 managed by the [bamr87/bamr87 dash](https://github.com/bamr87/bamr87) (registry: `_data/projects.yml`; tiered baseline: `docs/STANDARDS.md`). It is vendored there as a git submodule: commit and push changes **here** first — the hub only bumps its pointer afterwards. Shared CI, release, schema, and agent kits are seeded from the hub's `templates/`; prefer adopting those over hand-rolling equivalents.
+One of ~40 repos managed by the [bamr87/bamr87 dash](https://github.com/bamr87/bamr87) (registry: `_data/projects.yml`; standards: `specs/`). It is vendored there as a git submodule: commit and push here first; the hub only bumps its pointer afterwards. Shared CI, release, schema and agent kits are seeded from the hub's `templates/`; prefer adopting them over hand-rolling equivalents. `amrs-project`, `afms` and `amrs-django` are the repos the financial core came from; see each one's own agent file for what still lives there.
 
-`amrs-project`, `afms`, and `amrs-django` are the three repos this one's financial core was consolidated from; see each one's own `CLAUDE.md` for what — if anything — still lives there.
+## Standard deviations
+
+none
 
 ## Governance
 
