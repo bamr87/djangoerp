@@ -1,5 +1,24 @@
 # Changelog
 
+## [0.2.0](https://github.com/bamr87/djangoerp/compare/v0.1.0...v0.2.0) (2026-10-30)
+
+
+### Added
+
+* **company:** company charter, landing page and health probe ([#13](https://github.com/bamr87/djangoerp/issues/13)) ([a6ee9f3](https://github.com/bamr87/djangoerp/commit/a6ee9f3fe04182390d2c7d18ed135d76843081cf))
+* **docker:** local Docker stack on PostgreSQL, Redis and Celery ([#14](https://github.com/bamr87/djangoerp/issues/14)) ([94ebc64](https://github.com/bamr87/djangoerp/commit/94ebc64c2017302bba54c0a354868059b710fe5a))
+* **erp:** supply chain, manufacturing and MRP core around the ledger ([#11](https://github.com/bamr87/djangoerp/issues/11)) ([81ee701](https://github.com/bamr87/djangoerp/commit/81ee7016b0df3070a15cb7e58a306be9d31ebfc9))
+
+
+### Fixed
+
+* **manufacturing:** keep the actionable active-BOM error under DRF 3.18.2 ([35dc48e](https://github.com/bamr87/djangoerp/commit/35dc48e80a0266cac95e826398fa089b94e5c23c))
+* **release:** skip release-please when it has no credential to open the PR ([5667ed7](https://github.com/bamr87/djangoerp/commit/5667ed726d8a3a342a56e7eb23bff88bb7837427))
+* **release:** skip release-please when it has no credential to open the PR ([6dbb7d0](https://github.com/bamr87/djangoerp/commit/6dbb7d06279910c99edd313ee52cd447a1a267d7))
+* **reports:** make SavedReport/ReportTemplate JSONFields Decimal-safe ([#12](https://github.com/bamr87/djangoerp/issues/12)) ([207d74e](https://github.com/bamr87/djangoerp/commit/207d74ed1a530b3ba129f5783d923b79cc935e6b))
+
+## Changelog
+
 All notable changes to this project are documented in this file. The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## Unreleased
