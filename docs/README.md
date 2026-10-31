@@ -22,8 +22,10 @@ Start with the [root README](../README.md) for setup and the ERP loop, and [AGEN
 | Document | What it covers |
 | --- | --- |
 | [`docs/ARCHITECTURE.md`](ARCHITECTURE.md) | How DjangoERP is put together: the module map and dependency direction, the invariants that hold it together, the GL posting matrix, the MRP algorithm, and which open-source designs were adopted and why. |
+| [`docs/constitution.md`](constitution.md) | The rules every change to this repo must satisfy, whoever makes it — a human or an AI agent. Agents read this before [CLAUDE.md](../CLAUDE.md) conventions, the [PRD](../PRD.md), or the [feature catalog](../features/features.yml). Ratified… |
 | [`docs/DOCKER.md`](DOCKER.md) | How to run DjangoERP in Docker against PostgreSQL and Redis, which ports it publishes and why they stay on loopback, and how to attach the VS Code debugger to the web, worker and one-shot containers. |
 | [`docs/adr/`](adr/README.md) | This directory records decisions for djangoerp that are hard to reverse: the stack, data model, security model, public interfaces, and any relaxation of a gate. |
+| [`docs/amendments/`](amendments/README.md) | The append-only log of numbered amendments to the djangoerp constitution, with their status. |
 
 ### `docs/reference/`
 
