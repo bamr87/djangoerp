@@ -71,3 +71,21 @@ features:
     surface: infra
     link: "docker-compose.yml"
     docs: "README.md"
+  - id: DJERP-007
+    title: "Reversing entries for posted journal entries"
+    description: "POST /api/journal/entries/{id}/reverse/ posts an idempotent mirror entry via post_entry, linked to the original and audit-logged (issue #44)"
+    implemented: false
+    status: planned
+    prd: [FR3]
+    surface: api
+    link: "journal/services.py"
+    docs: "https://github.com/bamr87/djangoerp/issues/44"
+  - id: DJERP-008
+    title: "Fiscal periods, lock dates and period-close entry"
+    description: "FiscalPeriod + Company.lock_date block postings into closed periods; a close action posts P&L to retained earnings (issue #45)"
+    implemented: false
+    status: planned
+    prd: [FR4]
+    surface: api
+    link: "journal/models.py"
+    docs: "https://github.com/bamr87/djangoerp/issues/45"
