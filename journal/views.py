@@ -2,14 +2,17 @@ from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import filters, permissions, viewsets
 
 from accounts.permissions import IsAccountant
+from core.viewsets import ProtectedHistoryDestroyMixin
 
 from .models import JournalEntry, JournalLine
 from .serializers import JournalEntrySerializer, JournalLineSerializer
 
 
-class JournalEntryViewSet(viewsets.ModelViewSet):
+class JournalEntryViewSet(ProtectedHistoryDestroyMixin, viewsets.ModelViewSet):
     """
     API endpoint for journal entries
+
+    Only a draft can be deleted; a posted entry is voided or reversed.
     """
     queryset = JournalEntry.objects.all().order_by('-date', '-id')
     serializer_class = JournalEntrySerializer

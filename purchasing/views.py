@@ -4,13 +4,14 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 
 from accounts.permissions import IsAccountant
+from core.viewsets import ProtectedHistoryDestroyMixin
 
 from . import services
 from .models import PurchaseOrder
 from .serializers import PurchaseOrderSerializer
 
 
-class PurchaseOrderViewSet(viewsets.ModelViewSet):
+class PurchaseOrderViewSet(ProtectedHistoryDestroyMixin, viewsets.ModelViewSet):
     """
     API endpoint for purchase orders. State transitions are actions (confirm,
     receive, cancel) backed by purchasing.services, never direct status writes.

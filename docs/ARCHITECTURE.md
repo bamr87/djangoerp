@@ -31,7 +31,7 @@ flowchart TD
 
 | App | Owns | Depends on |
 | --- | --- | --- |
-| `core` | `TimestampMixin`, `DocumentSequence` (atomic numbering), `core.audit` (audit-trail writer), `core.exceptions` (the API's 409 for a refused delete), `core.demo` (demo company), `demo_erp` command | `accounts` (audit model) |
+| `core` | `TimestampMixin`, `DocumentSequence` (atomic numbering), `core.audit` (audit-trail writer), `core.exceptions` (the API's 409 for a refused delete), `core.viewsets` (DELETE removes drafts only), `core.demo` (demo company), `demo_erp` command | `accounts` (audit model) |
 | `partners` | `BusinessPartner` — one row can be customer and/or supplier, carries AR/AP control accounts | `coa` |
 | `products` | `UnitOfMeasure`, `ProductCategory` (GL account mappings), `Product` (buy/make, costs, lead time, safety stock, lot sizing) | `coa`, `partners` |
 | `inventory` | `Warehouse`, `StockMove` (append-only stock ledger), `StockLevel` (cached on-hand + moving average) | `products` |
@@ -42,7 +42,7 @@ flowchart TD
 
 ## The invariants
 
-The two ledgers follow the same law: **only posted rows exist**. Journal entries count only when `status='posted'`; stock moves count only when `status='done'`. Both are append-only — corrections are reversing entries and opposing moves, never edits. The API enforces this: posted journal entries reject every change except voiding, completed stock moves reject all changes, posted invoices and payments reject edits.
+The two ledgers follow the same law: **only posted rows exist**. Journal entries count only when `status='posted'`; stock moves count only when `status='done'`. Both are append-only — corrections are reversing entries and opposing moves, never edits. The API enforces this: posted journal entries reject every change except voiding, completed stock moves reject all changes, posted invoices and payments reject edits. DELETE removes drafts only: a posted or voided entry, a posted invoice or payment, a done move and a confirmed or later order answer 400 (`core.viewsets.ProtectedHistoryDestroyMixin`), and `pre_delete` guards refuse the same ledger deletes through the ORM or the admin, so the general ledger never loses an entry its source documents point to.
 
 The journal's line rules live in one place. `journal.services.validate_lines` (non-negative amounts quantized to the cent, a debit or a credit per line but never both, a non-zero debit and credit, equal totals) runs on the API path and inside `post_entry`, and `JournalLine` carries matching check constraints (`debit >= 0`, `credit >= 0`, not both) for any write that goes around them. Manual and system entries are numbered from the same `JE` sequence, so a client can never take a number a later posting needs. `JournalLine.account` is `PROTECT`: an account with ledger history cannot be deleted, only retired with `is_active=false`, and the trial balance and general ledger keep reporting a retired account's posted balance. Any delete a `PROTECT` foreign key refuses answers 409, not 500.
 
