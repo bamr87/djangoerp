@@ -100,6 +100,8 @@ The full route table — method, path, view, permission classes and summary — 
 djangoerp/           # Project settings (base/dev/prod split), root urls, celery app
 core/                # TimestampMixin, DocumentSequence numbering, audit writer, demo company + demo_erp
 company/             # Company (the entity whose books these are), the landing page and /health/
+templates/           # Project-wide templates: includes/ holds the feedback widget's mount points
+public/              # The feedback widget's scripts, vendored from the hub and served as static/js/
 accounts/            # UserRole (admin/accountant/viewer/auditor), AuditLog, JWT login, permissions
 coa/                 # Chart of accounts: AccountType + self-referencing Account tree
 journal/             # JournalEntry + JournalLine — the double-entry ledger — and the posting service
@@ -120,6 +122,8 @@ tools/               # gen_api_routes.py (route reference), docs_index.py + unwr
 ## Development
 
 Build, test and lint commands are in [Quick start](#quick-start). CI is the hub's shared `standard-ci.yml` gate, called from [`.github/workflows/ci.yml`](.github/workflows/ci.yml). After changing a route or a view docstring, regenerate the route reference with `python3 tools/gen_api_routes.py --write` — `core/test_docs_reference.py` fails while it is stale. Full commands, conventions and gotchas for humans and AI agents live in [AGENTS.md](AGENTS.md).
+
+Every page rendered from `company/templates/company/base.html` carries the fleet's "Improve this page" widget, which files a prefilled GitHub issue (page, environment and recent console errors) against this repo. Its scripts live in `public/` and its body include in `templates/includes/fleet-feedback.html`, all three vendored unchanged from the hub's feedback kit (`tools/fanout.sh --kit feedback --upgrade` refreshes them), so change them upstream in [bamr87/bamr87](https://github.com/bamr87/bamr87/tree/main/templates/feedback), never here. This repo owns the `<head>` include `templates/includes/fleet-feedback-head.html`, the mount points in `base.html`, and `company/context_processors.py`, which supplies the repo, branch and version the widget reports.
 
 ## Contributing
 

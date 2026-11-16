@@ -73,6 +73,7 @@ Docker gotchas (details in [docs/DOCKER.md](docs/DOCKER.md)):
 | `mrp/` | `MRPRun`/`PlannedOrder`, `engine.py` (the planner, a Celery task), `services.convert_run` (planned orders → draft POs/WOs) |
 | `docs/` | [`ARCHITECTURE.md`](docs/ARCHITECTURE.md) (module map, invariants, posting matrix, MRP algorithm, adopted patterns), [`DOCKER.md`](docs/DOCKER.md), the generated [`reference/`](docs/reference/) and the [index](docs/README.md) |
 | `tools/` | `gen_api_routes.py`; `docs_index.py` and `unwrap-prose.py` are vendored from the hub — do not edit |
+| `public/`, `templates/includes/` | The fleet "Improve this page" widget, mounted by `company/templates/company/base.html`: `public/fleet-feedback*.js` (served as `static/js/` through `STATICFILES_DIRS`) and `templates/includes/fleet-feedback.html` are vendored from the hub's feedback kit — do not edit; `fleet-feedback-head.html` is this repo's |
 | `Dockerfile`, `docker-compose.yml`, `docker/`, `.vscode/` | The image (`dev` with debugpy, `prod` with gunicorn), the `web`/`db`/`redis`/`worker` stack, its scripts, and the attach configurations |
 
 Each app owns `models.py`, `migrations/`, `tests.py` and usually `serializers.py`, `views.py`, `urls.py`, `admin.py`; document apps also own a `services.py` holding their state transitions. Each app's `DefaultRouter` is mounted under `/api/<area>/`; every route is listed in the generated [`docs/reference/api-routes.md`](docs/reference/api-routes.md).

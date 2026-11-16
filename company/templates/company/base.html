@@ -3,6 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    {% include 'includes/fleet-feedback-head.html' %}
     <title>{% block title %}DjangoERP{% endblock %} · DjangoERP</title>
     <style>
         :root {
@@ -49,6 +50,8 @@
         th { color: var(--muted); font-weight: 600; font-size: 0.85rem; text-transform: uppercase; }
         code { background: var(--rule); padding: 0.1rem 0.35rem; border-radius: 0.25rem; font-size: 0.9em; }
         footer { border-top: 1px solid var(--rule); text-align: center; padding: 2rem; color: var(--muted); font-size: 0.9rem; }
+        footer p { margin: 0.25rem 0; }
+        footer a { color: var(--accent); }
         .badge {
             display: inline-block;
             background: var(--gold);
@@ -73,6 +76,10 @@
     <main>
         {% block content %}{% endblock %}
     </main>
-    <footer>Django + DRF ERP · double-entry core, supply chain, manufacturing, MRP</footer>
+    <footer>
+        <p>Django + DRF ERP · double-entry core, supply chain, manufacturing, MRP</p>
+        {# The fleet "Improve this page" widget: the floating button, plus its no-JS link here in the footer. #}
+        <p>{% include 'includes/fleet-feedback.html' %}</p>
+    </footer>
 </body>
 </html>

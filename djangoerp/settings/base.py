@@ -62,6 +62,11 @@ MIDDLEWARE = [
 # Surfaced by the /health/ endpoint; bump alongside each release tag.
 APP_VERSION = '0.2.0'
 
+# The fleet "Improve this page" widget (templates/includes/fleet-feedback.html) files issues against this repo and
+# branch; company.context_processors.fleet hands both, with APP_VERSION, to every template.
+FLEET_REPO = 'bamr87/djangoerp'
+FLEET_BRANCH = env('FLEET_BRANCH', default='main')
+
 ROOT_URLCONF = 'djangoerp.urls'
 
 TEMPLATES = [
@@ -75,6 +80,7 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'company.context_processors.fleet',
             ],
         },
     },
@@ -100,6 +106,10 @@ USE_TZ = True
 
 STATIC_URL = 'static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+# public/ holds the fleet feedback kit's scripts: the hub's `tools/fanout.sh --kit feedback` vendors them there and
+# upgrades them in place, so they stay put. The 'js' prefix serves them where the kit's Django include asks for
+# them, static/js/fleet-feedback.js and static/js/fleet-feedback-capture.js.
+STATICFILES_DIRS = [('js', BASE_DIR / 'public')]
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 

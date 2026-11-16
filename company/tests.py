@@ -1,6 +1,10 @@
+import re
+from pathlib import Path
+
 from django.conf import settings
 from django.contrib import admin
-from django.test import TestCase
+from django.contrib.staticfiles import finders
+from django.test import TestCase, override_settings
 from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APITestCase
@@ -40,6 +44,42 @@ class HomeViewTests(TestCase):
         Company.objects.create(name='Dissolved Co', is_active=False)
         response = self.client.get(reverse('company:home'))
         self.assertContains(response, 'No company on file')
+
+
+class FeedbackWidgetTests(TestCase):
+    """The fleet feedback kit (public/*.js, templates/includes/) is mounted by company/base.html."""
+
+    def home_html(self):
+        return self.client.get(reverse('company:home')).content.decode()
+
+    def test_widget_files_reports_against_this_repo(self):
+        html = self.home_html()
+        self.assertIn('<fleet-feedback', html)
+        self.assertIn('repo="bamr87/djangoerp"', html)
+        self.assertIn('branch="main"', html)
+        self.assertIn('app-version="%s"' % settings.APP_VERSION, html)
+        self.assertIn('<script src="/static/js/fleet-feedback.js" defer></script>', html)
+        self.assertIn('issues/new?template=page_feedback.yml', html)  # the no-JS link
+        self.assertGreater(html.index('<fleet-feedback'), html.index('</main>'))
+
+    def test_capture_buffer_is_the_first_script(self):
+        html = self.home_html()
+        scripts = re.findall(r'<script\b[^>]*>', html)
+        self.assertEqual(scripts[0], '<script src="/static/js/fleet-feedback-capture.js">')
+        self.assertLess(html.index(scripts[0]), html.index('</head>'))
+
+    @override_settings(DEBUG=True)
+    def test_env_is_development_for_a_local_request_under_debug(self):
+        self.assertIn('env="development"', self.home_html())
+
+    def test_env_is_production_without_debug(self):
+        self.assertIn('env="production"', self.home_html())
+
+    def test_kit_scripts_resolve_from_public(self):
+        for name in ('fleet-feedback.js', 'fleet-feedback-capture.js'):
+            found = finders.find('js/' + name)
+            self.assertIsNotNone(found, name)
+            self.assertEqual(Path(found), Path(settings.BASE_DIR) / 'public' / name)
 
 
 class CompanyModelTests(TestCase):
