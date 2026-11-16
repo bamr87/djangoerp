@@ -57,6 +57,10 @@ docker compose down -v                 # stop and drop the database volume
 
 Published ports bind to `127.0.0.1`. The port map, the in-container test loop, and attaching the VS Code debugger (**F5 → Docker: Attach to Django**) are in [docs/DOCKER.md](docs/DOCKER.md).
 
+### Production settings
+
+`DJANGO_SETTINGS_MODULE=djangoerp.settings.prod` (the image's `prod` target) adds HSTS, an HTTPS redirect and secure cookies, and refuses to start without a real `SECRET_KEY`: unset, empty or `django-insecure…` raises `ImproperlyConfigured`, because the key signs sessions, password-reset links and every JWT. Generate one with `python3 -c "import secrets; print(secrets.token_urlsafe(50))"` (django-environ reads a value that starts with `$` as the name of another variable, so avoid keys that do). With a real key, `python manage.py check --deploy --fail-level WARNING` reports no issues, and `core/test_prod_settings.py` keeps both rules under test.
+
 ### See the whole ERP loop run
 
 `python manage.py demo_erp` builds a demo company (chart of accounts, GL mappings, partners, warehouse, a make/buy product structure with a BOM), then runs the full loop through the same services the API uses: sales order → MRP run → planned orders (pegged, lead-time offset) → purchase order + work order → goods receipt → production at rolled-up cost → shipment → customer invoice → payment → supplier settlement → trial balance / balance sheet / income statement. It exits non-zero if the books don't balance. The same flow is pinned with exact numbers in `core/tests.py::EndToEndERPFlowTests`.

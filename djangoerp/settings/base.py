@@ -10,6 +10,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent.parent
 
 environ.Env.read_env(os.path.join(BASE_DIR, '.env'), overwrite=False)
 
+# A development and test fallback only: settings/prod.py reads SECRET_KEY with no default and refuses this value.
 SECRET_KEY = env('SECRET_KEY', default='django-insecure-change-me')
 
 DEBUG = False
