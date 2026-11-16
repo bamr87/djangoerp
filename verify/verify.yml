@@ -23,13 +23,15 @@ schema: verify/v1
 app:
   # Command that serves the app (run from the repo root, in the background).
   # Leave empty and set `static_dir` to serve a built directory instead.
-  start: ""
+  # Dev settings (the manage.py default): SQLite, DEBUG, so runserver also
+  # serves the feedback widget's static files. --noreload keeps it one process.
+  start: "python manage.py migrate --noinput && python manage.py runserver 127.0.0.1:8000 --noreload"
   # Optional one-shot build before `start` / before serving `static_dir`.
   build: ""
   # Directory to serve statically when `start` is empty (e.g. _site, dist, build).
   static_dir: ""
   # Base URL the scenarios navigate against.
-  url: http://127.0.0.1:4000
+  url: http://127.0.0.1:8000
   # Path polled until it answers 200 before any scenario runs.
   ready: /
   # Seconds to wait for `ready`.

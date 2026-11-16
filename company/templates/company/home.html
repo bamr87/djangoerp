@@ -1,41 +1,37 @@
 {% extends 'company/base.html' %}
 
-{% block title %}{% if company %}{{ company.name }}{% else %}Setup{% endif %}{% endblock %}
-
 {% block content %}
     {% if company %}
-        <h2>{{ company.name }}</h2>
+        <h1>{{ company.name }}</h1>
         <p>
             Books kept in <span class="badge">{{ company.currency_code }}</span>
             {% if company.founded_on %}· founded {{ company.founded_on }}{% endif %}
         </p>
         {% if company.legal_name %}<p>Registered as <em>{{ company.legal_name }}</em>.</p>{% endif %}
+        <p>Run <code>python manage.py demo_erp</code> to exercise the whole loop end to end.</p>
     {% else %}
-        <h2>No company on file</h2>
-        <p>
-            This installation has no company record yet. Create one in the
-            <a href="{% url 'admin:company_company_add' %}">admin</a>, or POST to
-            <code>/api/company/companies/</code>.
-        </p>
+        <h1>Get started</h1>
+        <p>No company on file yet. To set this installation up:</p>
+        <ol>
+            <li>Create an administrator with <code>python manage.py createsuperuser</code>, then give the account a role on its user page in the admin; every role-checked API endpoint denies an account without one.</li>
+            <li>Record the company whose books these are, in the admin or with <code>POST /api/company/companies/</code> and a token from <code>POST /api/auth/login/</code>.</li>
+            <li>Optionally, run <code>python manage.py demo_erp</code> to walk the whole loop (plan, buy, make, ship, bill, collect) on demo data and check that the books balance.</li>
+        </ol>
+        {% if user.is_staff %}
+            <p><a href="{% url 'admin:company_company_add' %}">Add the company in the admin</a></p>
+        {% endif %}
     {% endif %}
 
-    <h3>API surface</h3>
+    <h2>API surface</h2>
     <table>
-        <tr><th>Area</th><th>Prefix</th></tr>
-        <tr><td>Authentication (JWT)</td><td><code>/api/auth/</code></td></tr>
-        <tr><td>Chart of accounts</td><td><code>/api/coa/</code></td></tr>
-        <tr><td>Journal (double-entry ledger)</td><td><code>/api/journal/</code></td></tr>
-        <tr><td>Invoices &amp; payments</td><td><code>/api/invoices/</code></td></tr>
-        <tr><td>Reports</td><td><code>/api/reports/</code></td></tr>
-        <tr><td>Partners</td><td><code>/api/partners/</code></td></tr>
-        <tr><td>Products</td><td><code>/api/products/</code></td></tr>
-        <tr><td>Inventory</td><td><code>/api/inventory/</code></td></tr>
-        <tr><td>Purchasing</td><td><code>/api/purchasing/</code></td></tr>
-        <tr><td>Sales</td><td><code>/api/sales/</code></td></tr>
-        <tr><td>Manufacturing</td><td><code>/api/manufacturing/</code></td></tr>
-        <tr><td>MRP</td><td><code>/api/mrp/</code></td></tr>
-        <tr><td>Company</td><td><code>/api/company/</code></td></tr>
+        <caption>REST API areas by URL prefix. Each prefix opens its section of the API docs.</caption>
+        <thead>
+            <tr><th scope="col">Area</th><th scope="col">Prefix</th></tr>
+        </thead>
+        <tbody>
+            {% for label, prefix in api_areas %}
+            <tr><td>{{ label }}</td><td><a href="{% url 'schema-swagger-ui' %}#/{{ prefix }}"><code>/api/{{ prefix }}/</code></a></td></tr>
+            {% endfor %}
+        </tbody>
     </table>
-
-    <p>Run <code>python manage.py demo_erp</code> to exercise the whole loop end to end.</p>
 {% endblock %}

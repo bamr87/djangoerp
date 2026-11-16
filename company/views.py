@@ -25,10 +25,33 @@ class CompanyViewSet(viewsets.ModelViewSet):
         serializer.save(created_by=self.request.user)
 
 
+# The API areas the landing page lists, in djangoerp/urls.py order, as (label, prefix): each is served under
+# /api/<prefix>/, and drf-yasg tags that area's operations <prefix>, so /swagger/#/<prefix> opens its section.
+API_AREAS = (
+    ('Authentication (JWT)', 'auth'),
+    ('Chart of accounts', 'coa'),
+    ('Journal (double-entry ledger)', 'journal'),
+    ('Invoices & payments', 'invoices'),
+    ('Reports', 'reports'),
+    ('Partners', 'partners'),
+    ('Products', 'products'),
+    ('Inventory', 'inventory'),
+    ('Purchasing', 'purchasing'),
+    ('Sales', 'sales'),
+    ('Manufacturing', 'manufacturing'),
+    ('MRP', 'mrp'),
+    ('Company', 'company'),
+)
+
+
 def home(request):
     """Public landing page: shows the company charter once one is recorded."""
     company = Company.objects.filter(is_active=True).first()
-    return render(request, 'company/home.html', {'company': company})
+    return render(request, 'company/home.html', {
+        'company': company,
+        'page_title': company.name if company else 'Get started',
+        'api_areas': API_AREAS,
+    })
 
 
 def health(request):

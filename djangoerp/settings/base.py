@@ -157,7 +157,10 @@ SWAGGER_SETTINGS = {
             'in': 'header',
             'description': 'JWT auth. Use: Bearer <access-token>',
         }
-    }
+    },
+    # /swagger/#/<tag> opens that tag's section; the landing page links each /api/<area>/ prefix there
+    # (company.views.API_AREAS).
+    'DEEP_LINKING': True,
 }
 
 # Celery

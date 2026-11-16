@@ -7,6 +7,8 @@ db.sqlite3
 staticfiles/
 celerybeat-schedule
 celerybeat.pid
+# verify/runner.mjs dependencies, installed per run (README: Development)
+node_modules/
 
 # OS noise
 .DS_Store
