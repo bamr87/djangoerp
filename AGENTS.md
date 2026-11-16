@@ -2,7 +2,7 @@
 
 # djangoerp
 
-> Modular Django REST ERP: double-entry accounting, inventory, purchasing, sales, manufacturing and MRP planning.
+> Django ERP's direction is to become the ultimate open home for all things enterprise resource planning: data, tools, resources and transparency, with a double-entry core, modular order-to-cash, procure-to-pay and make-to-stock flows, and an inspectable API for everyone ([constitution](docs/constitution.md) §1).
 
 ## What this repo is
 

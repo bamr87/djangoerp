@@ -8,6 +8,22 @@ Derived from the README, agent docs, config and code in [`bamr87/djangoerp`](htt
 
 A Django 6 + Django REST Framework ERP built outward from a double-entry accounting core into a modular enterprise system supporting order-to-cash, procure-to-pay and make-to-stock. The financial core was consolidated from `amrs-project`; supply-chain and planning modules re-implement designs from ERPNext, Odoo, Tryton, InvenTree and frePPLe.
 
+## 1.1 Missions
+
+Django ERP's direction is to become the ultimate open home for all things enterprise resource planning — data, tools, resources and transparency, gathered in one place that anyone can inspect and reuse.
+
+1. **Provide data, tools, resources and transparency for all stakeholders, finance and operations professionals, and the general public.** Operators, accountants, developers and anyone studying how an ERP should work are first-class audiences. The aim is a shared, inspectable commons: the same ledger, the same modules, and the same API for everyone.
+2. **Grow a modular, API-first ERP outward from a double-entry accounting core, covering order-to-cash, procure-to-pay and make-to-stock, with a ledger that stays auditable.** Chart of accounts, journal entries, invoices and payments, inventory, purchasing, sales, manufacturing and MRP planning should compose as open Django apps rather than a monolith no one can read.
+3. **Keep that system open and comparable: Django and Django REST Framework, modular apps, and designs that can be studied against established open ERPs rather than locked behind a vendor.** The financial core, consolidated from earlier work, and supply-chain and planning modules informed by open-source predecessors, should remain something a practitioner can inspect, extend and teach from.
+
+These missions set the course; they do not claim the work is finished. They serve the PRD's scope: a Django 6 and Django REST Framework ERP built outward from a double-entry core into a modular enterprise system.
+
+**Requirement**
+
+- MR1: Constitution §1 states one direction statement and exactly three numbered missions, and the README and AGENTS.md taglines match that direction and link to constitution §1.
+
+Feature [DJERP-009](features/features.yml) traces to requirement MR1.
+
 ## 2. Target users
 
 - Small/medium businesses or developers needing an API-first ERP backend
@@ -49,6 +65,7 @@ Every user-facing capability has a stable id in the feature catalog [`features/f
 | [DJERP-006](features/features.yml) | Docker / docker-compose with PostgreSQL | shipped | [`docker-compose.yml`](docker-compose.yml) · [`README.md`](README.md) | TBD |
 | [DJERP-007](features/features.yml) | Reversing entries for posted journal entries | planned | [`journal/services.py`](journal/services.py) · [docs](https://github.com/bamr87/djangoerp/issues/44) | FR3 |
 | [DJERP-008](features/features.yml) | Fiscal periods, lock dates and period-close entry | planned | [`journal/models.py`](journal/models.py) · [docs](https://github.com/bamr87/djangoerp/issues/45) | FR4 |
+| [DJERP-009](features/features.yml) | Constitution missions | planned | [`docs/constitution.md`](docs/constitution.md) · [`PRD.md`](PRD.md) | MR1 |
 
 **Requirement → feature trace**
 
@@ -57,6 +74,7 @@ Every user-facing capability has a stable id in the feature catalog [`features/f
 | TBD | DJERP-001, DJERP-002, DJERP-003, DJERP-004, DJERP-005, DJERP-006 |
 | FR3 | DJERP-007 |
 | FR4 | DJERP-008 |
+| MR1 | DJERP-009 |
 <!-- features:end -->
 
 ## 5. Requirements

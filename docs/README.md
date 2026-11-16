@@ -13,7 +13,7 @@ Start with the [root README](../README.md) for setup and the ERP loop, and [AGEN
 
 | Document | What it covers |
 | --- | --- |
-| [`AGENTS.md`](../AGENTS.md) | Modular Django REST ERP: double-entry accounting, inventory, purchasing, sales, manufacturing and MRP planning. |
+| [`AGENTS.md`](../AGENTS.md) | Django ERP's direction is to become the ultimate open home for all things enterprise resource planning: data, tools, resources and transparency, with a double-entry core, modular order-to-cash, procure-to-pay and make-to-stock flows, and… |
 | [`CHANGELOG.md`](../CHANGELOG.md) | Release history: the notable changes in each version, newest first. |
 | [`PRD.md`](../PRD.md) | Product requirements for DjangoERP — the problem, target users, goals, current features and open questions — with anything the sources do not state marked TBD. |
 
