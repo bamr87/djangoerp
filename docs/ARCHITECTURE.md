@@ -44,13 +44,15 @@ flowchart TD
 
 The two ledgers follow the same law: **only posted rows exist**. Journal entries count only when `status='posted'`; stock moves count only when `status='done'`. Both are append-only — corrections are reversing entries and opposing moves, never edits. The API enforces this: posted journal entries reject every change except voiding, completed stock moves reject all changes, posted invoices and payments reject edits. DELETE removes drafts only: a posted or voided entry, a posted invoice or payment, a done move and a confirmed or later order answer 400 (`core.viewsets.ProtectedHistoryDestroyMixin`), and `pre_delete` guards refuse the same ledger deletes through the ORM or the admin, so the general ledger never loses an entry its source documents point to.
 
+A manual entry is corrected with `POST /api/journal/entries/{id}/reverse/` (`journal.services.reverse_entry`): a posted mirror entry with every debit and credit swapped, dated the day of the correction (or the date given), linked to the original by `reverses`/`reversed_by` and audit-logged as `journal.reverse`. The original stays posted, so each period keeps the history it reported, and the pair nets every account to zero. Only posted manual entries qualify: an entry a business document posted is corrected through that document, and neither half of a reversal pair can be voided.
+
 The journal's line rules live in one place. `journal.services.validate_lines` (non-negative amounts quantized to the cent, a debit or a credit per line but never both, a non-zero debit and credit, equal totals) runs on the API path and inside `post_entry`, and `JournalLine` carries matching check constraints (`debit >= 0`, `credit >= 0`, not both) for any write that goes around them. Manual and system entries are numbered from the same `JE` sequence, so a client can never take a number a later posting needs. `JournalLine.account` is `PROTECT`: an account with ledger history cannot be deleted, only retired with `is_active=false`, and the trial balance and general ledger keep reporting a retired account's posted balance. Any delete a `PROTECT` foreign key refuses answers 409, not 500.
 
 Cached balances are derived, provably. `StockLevel` is the cache of `SUM(done moves)` per product/warehouse, maintained under `select_for_update` row locks in the same transaction as the move, and `inventory.services.rebuild_stock_levels()` reconstructs it from the ledger (pinned by test).
 
 Documents are state machines. Every transition — `confirm`, `receive`, `ship`, `complete`, `post`, `convert`, `cancel` — is a named service function that validates preconditions, does all its work in one transaction, and writes the audit trail. Views and serializers never assign `status` directly.
 
-Posting is idempotent. `JournalEntry.source_reference` is unique; every system posting is keyed to its business event (`grn:GRN-00001`, `shipment:SHP-00001`, `wo:WO-00001:complete`, `invoice:INV-00001`, `payment:PAY-00001`), so a retried flow returns the existing entry instead of double-posting.
+Posting is idempotent. `JournalEntry.source_reference` is unique; every system posting is keyed to its business event (`grn:GRN-00001`, `shipment:SHP-00001`, `wo:WO-00001:complete`, `invoice:INV-00001`, `payment:PAY-00001`, and `reversal:<id>` for a reversing entry), so a retried flow returns the existing entry instead of double-posting.
 
 Stock is valued at moving average, per product per warehouse (ERPNext's formula): receipts re-weight `average_cost = (old_qty*old_avg + receipt_value) / new_qty`; issues leave at the current average and can never drive on-hand negative. Every completed move snapshots `unit_cost` and the 2dp `total_value` its GL posting used, so the stock ledger and the general ledger cannot disagree.
 
@@ -86,6 +88,7 @@ Account resolution is explicit configuration, never guessed: product categories 
 | Customer invoice posted | Partner receivable | Revenue (per line product category, or invoice fallback account) | `invoices.services.post_invoice` |
 | Customer payment posted | Deposit (cash/bank) account | Partner receivable | `invoices.services.post_payment` |
 | Supplier settlement | Supplier payable | Cash | manual journal entry (vendor-bill matching is roadmap) |
+| Reversal of a manual entry | The original's credits | The original's debits | `journal.services.reverse_entry` |
 
 Revenue recognition is deliberately split from shipment: shipping posts COGS only, and revenue posts when the invoice posts, keeping the two events separately auditable.
 

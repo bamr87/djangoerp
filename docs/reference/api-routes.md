@@ -45,6 +45,7 @@ Paths are relative to the host (`http://localhost:8000` in development). Every `
 | --- | --- | --- | --- | --- |
 | GET POST | `/api/journal/entries/` | `JournalEntryViewSet.list/create` | `IsAuthenticated`, `IsAccountant` | API endpoint for journal entries |
 | GET PUT PATCH DELETE | `/api/journal/entries/{pk}/` | `JournalEntryViewSet.retrieve/update/partial_update/destroy` | `IsAuthenticated`, `IsAccountant` | — |
+| POST | `/api/journal/entries/{pk}/reverse/` | `JournalEntryViewSet.reverse_entry` | `IsAuthenticated`, `IsAccountant` | Post a reversing entry for this posted manual entry: the same lines with debits and credits swapped, linked through `reverses`. 201 the first time; a repeat call returns the same reversal with 200. Optional body: {"date": "YYYY-MM-DD", "description": "..."}. |
 | GET | `/api/journal/lines/` | `JournalLineViewSet.list` | `IsAuthenticated` | API endpoint for journal lines (read-only) |
 | GET | `/api/journal/lines/{pk}/` | `JournalLineViewSet.retrieve` | `IsAuthenticated` | — |
 | GET | `/api/journal/` | `APIRootView` | `IsAuthenticated` | Provided by `rest_framework`. |
