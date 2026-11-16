@@ -31,7 +31,7 @@ flowchart TD
 
 | App | Owns | Depends on |
 | --- | --- | --- |
-| `core` | `TimestampMixin`, `DocumentSequence` (atomic numbering), `core.audit` (audit-trail writer), `core.demo` (demo company), `demo_erp` command | `accounts` (audit model) |
+| `core` | `TimestampMixin`, `DocumentSequence` (atomic numbering), `core.audit` (audit-trail writer), `core.exceptions` (the API's 409 for a refused delete), `core.demo` (demo company), `demo_erp` command | `accounts` (audit model) |
 | `partners` | `BusinessPartner` — one row can be customer and/or supplier, carries AR/AP control accounts | `coa` |
 | `products` | `UnitOfMeasure`, `ProductCategory` (GL account mappings), `Product` (buy/make, costs, lead time, safety stock, lot sizing) | `coa`, `partners` |
 | `inventory` | `Warehouse`, `StockMove` (append-only stock ledger), `StockLevel` (cached on-hand + moving average) | `products` |

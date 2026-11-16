@@ -62,7 +62,7 @@ Docker gotchas (details in [docs/DOCKER.md](docs/DOCKER.md)):
 | Path | Role |
 | --- | --- |
 | `djangoerp/` | Project package: `settings/` (base/dev/prod), root `urls.py`, `celery.py`, WSGI/ASGI |
-| `core/` | `TimestampMixin`, `DocumentSequence` (claim numbers only via `DocumentSequence.next_number(prefix)`), `audit.py` (`log_event`), `demo.py` + `demo_erp`, and `tests.py` (the end-to-end suite) |
+| `core/` | `TimestampMixin`, `DocumentSequence` (claim numbers only via `DocumentSequence.next_number(prefix)`), `audit.py` (`log_event`), `exceptions.py` (the DRF exception handler: 409 for a delete a `PROTECT` key refuses), `demo.py` + `demo_erp`, and `tests.py` (the end-to-end suite) |
 | `company/` | `Company` (the legal entity whose books these are), the landing page and `/health/` — kept out of `core/`, which stays infrastructure-only |
 | `accounts/` | `UserRole` (admin/accountant/viewer/auditor), `AuditLog`, JWT login, the shared permission classes |
 | `coa/`, `journal/` | Chart of accounts (`AccountType`, self-referencing `Account`); the double-entry ledger and `services.post_entry` |

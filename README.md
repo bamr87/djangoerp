@@ -98,7 +98,7 @@ The full route table — method, path, view, permission classes and summary — 
 
 ```
 djangoerp/           # Project settings (base/dev/prod split), root urls, celery app
-core/                # TimestampMixin, DocumentSequence numbering, audit writer, demo company + demo_erp
+core/                # TimestampMixin, DocumentSequence numbering, audit writer, API exception handler, demo company + demo_erp
 company/             # Company (the entity whose books these are), the landing page and /health/
 accounts/            # UserRole (admin/accountant/viewer/auditor), AuditLog, JWT login, permissions
 coa/                 # Chart of accounts: AccountType + self-referencing Account tree
