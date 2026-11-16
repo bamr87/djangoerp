@@ -170,3 +170,4 @@ Paths are relative to the host (`http://localhost:8000` in development). Every `
 | --- | --- | --- | --- | --- |
 | ANY | `/` | `company.views.home` | public | Public landing page: shows the company charter once one is recorded. |
 | ANY | `/health/` | `company.views.health` | public | Liveness probe for CI smoke tests and deployment healthchecks. |
+| ANY | `/version` | `company.views.version` | public | Build identity: the release version and the commit and build time of the running image. |

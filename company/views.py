@@ -39,3 +39,18 @@ def health(request):
         'version': settings.APP_VERSION,
         'debug': settings.DEBUG,
     })
+
+
+def version(request):
+    """
+    Build identity: the release version and the commit and build time of the running image.
+
+    The hub's UPS-BE-11 contract, exactly {name, version, commit, built_at}. `commit` and `built_at` are null
+    unless the image was built with GIT_SHA / BUILT_AT (see the Dockerfile).
+    """
+    return JsonResponse({
+        'name': 'djangoerp',
+        'version': settings.APP_VERSION,
+        'commit': settings.GIT_SHA,
+        'built_at': settings.BUILT_AT,
+    })

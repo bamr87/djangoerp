@@ -8,6 +8,9 @@
       "include-v-in-tag": true,
       "bump-minor-pre-major": true,
       "bump-patch-for-minor-pre-major": false,
+      "extra-files": [
+        "djangoerp/settings/base.py"
+      ],
       "changelog-sections": [
         {
           "type": "feat",

@@ -61,9 +61,26 @@
             font-size: 0.85rem;
             font-weight: 600;
         }
+        /* Off-screen until it takes keyboard focus as the first stop on the page (UPS-FE-11). */
+        .skip-link {
+            position: absolute;
+            top: 0.75rem;
+            left: 1rem;
+            z-index: 1000;
+            padding: 0.5rem 1rem;
+            border-radius: 0.4rem;
+            background: var(--fg);
+            color: var(--bg);
+            font-weight: 600;
+            text-decoration: none;
+            transform: translateY(-200%);
+        }
+        .skip-link:focus { transform: none; }
+        main:focus { outline: none; }
     </style>
 </head>
 <body>
+    <a class="skip-link" href="#main-content">Skip to content</a>
     <header>
         <h1>DjangoERP</h1>
         <nav>
@@ -73,7 +90,7 @@
             <a href="{% url 'company:health' %}">Health</a>
         </nav>
     </header>
-    <main>
+    <main id="main-content" tabindex="-1">
         {% block content %}{% endblock %}
     </main>
     <footer>

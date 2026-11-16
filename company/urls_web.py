@@ -14,4 +14,6 @@ app_name = 'company'
 urlpatterns = [
     path('', views.home, name='home'),
     path('health/', views.health, name='health'),
+    # No trailing slash: the fleet contract (UPS-BE-11) names the path GET /version.
+    path('version', views.version, name='version'),
 ]

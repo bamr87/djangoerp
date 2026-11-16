@@ -22,7 +22,7 @@ Published ports bind to `127.0.0.1`, because an open debugpy port is remote code
 
 | Host port | Service |
 | --- | --- |
-| `8000` | Django (`/`, `/admin/`, `/api/…`, `/swagger/`, `/health/`) |
+| `8000` | Django (`/`, `/admin/`, `/api/…`, `/swagger/`, `/health/`, `/version`) |
 | `5678` | debugpy — Django |
 | `5679` | debugpy — Celery worker (`celery` profile) |
 | `5680` | debugpy — one-shot commands (tests, `demo_erp`) |

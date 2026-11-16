@@ -1,3 +1,4 @@
+import json
 import re
 from pathlib import Path
 
@@ -80,6 +81,54 @@ class FeedbackWidgetTests(TestCase):
             found = finders.find('js/' + name)
             self.assertIsNotNone(found, name)
             self.assertEqual(Path(found), Path(settings.BASE_DIR) / 'public' / name)
+
+
+class VersionEndpointTests(TestCase):
+    """GET /version is the build identity (hub specs/BACKEND.md UPS-BE-11)."""
+
+    def test_version_returns_200_and_json_contract(self):
+        response = self.client.get('/version')
+        self.assertEqual(response.status_code, 200)
+        payload = response.json()
+        self.assertEqual(sorted(payload), ['built_at', 'commit', 'name', 'version'])
+        self.assertEqual(payload['name'], 'djangoerp')
+        self.assertEqual(payload['version'], settings.APP_VERSION)
+
+    def test_version_url_has_no_trailing_slash(self):
+        self.assertEqual(reverse('company:version'), '/version')
+
+    @override_settings(GIT_SHA=None, BUILT_AT=None)
+    def test_unknown_build_reports_null(self):
+        payload = self.client.get('/version').json()
+        self.assertIsNone(payload['commit'])
+        self.assertIsNone(payload['built_at'])
+
+    @override_settings(GIT_SHA='4e4a8f1f', BUILT_AT='2026-11-15T00:00:00Z')
+    def test_build_identity_comes_from_settings(self):
+        payload = self.client.get('/version').json()
+        self.assertEqual(payload['commit'], '4e4a8f1f')
+        self.assertEqual(payload['built_at'], '2026-11-15T00:00:00Z')
+
+    def test_app_version_is_the_release_please_version(self):
+        manifest = json.loads((Path(settings.BASE_DIR) / '.release-please-manifest.json').read_text())
+        self.assertEqual(settings.APP_VERSION, manifest['.'])
+        config = json.loads((Path(settings.BASE_DIR) / 'release-please-config.json').read_text())
+        self.assertIn('djangoerp/settings/base.py', config['packages']['.'].get('extra-files', []))
+
+
+class SkipLinkTests(TestCase):
+    """The first focusable element skips to <main id="main-content"> (hub specs/FRONTEND.md UPS-FE-11)."""
+
+    def test_skip_link_is_the_first_focusable_element(self):
+        html = self.client.get(reverse('company:home')).content.decode()
+        body = html[html.index('<body'):]
+        first = re.search(r'<(?:a|button|input|select|textarea)\b[^>]*>', body).group(0)
+        self.assertEqual(first, '<a class="skip-link" href="#main-content">')
+
+    def test_main_is_the_skip_target(self):
+        html = self.client.get(reverse('company:home')).content.decode()
+        self.assertEqual(html.count('id="main-content"'), 1)
+        self.assertIn('<main id="main-content"', html)
 
 
 class CompanyModelTests(TestCase):
