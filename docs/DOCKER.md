@@ -12,6 +12,8 @@ docker compose down -v                 # stop and drop the database volume
 
 Migrations are applied by the container entrypoint on every start, so `http://localhost:8000/` serves the landing page as soon as `up` returns.
 
+The `web` healthcheck ([`docker/healthcheck-web.sh`](../docker/healthcheck-web.sh)) probes `GET /readyz`, which answers 200 only while PostgreSQL answers `SELECT 1` and, when Celery is not eager (`CELERY_TASK_ALWAYS_EAGER=False`), Redis answers a ping; otherwise it answers 503 with the failing check marked `error`. A stopped `db` therefore turns `web` unhealthy instead of leaving a live process that cannot serve a page, and `docker inspect --format '{{json .State.Health}}' $(docker compose ps -q web)` shows which check failed. `GET /healthz` is the liveness probe, which touches no dependency.
+
 ## The admin account
 
 The entrypoint seeds an admin account from `.env` (copy `.env.example` if you have not already) — `djangoerp` / `djangoerp` by default, good for both `http://localhost:8000/admin/` and `POST /api/auth/login/`. It creates the `accounts.UserRole` row alongside the superuser, which `manage.py createsuperuser` does not: every DRF permission class reads `request.user.role.role`, so a superuser without that row can open the admin but is denied by `IsAdmin`, `IsAccountant` and `IsAuditor` on every API endpoint. Existing accounts are never touched — rotate the password with `docker compose exec web python manage.py changepassword djangoerp`, not by editing `.env`.
