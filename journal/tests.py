@@ -8,13 +8,15 @@ from rest_framework import serializers as drf_serializers
 from rest_framework import status
 from rest_framework.test import APITestCase
 
+from accounts.models import AuditLog
 from accounts.test_helpers import create_user
 from coa.models import Account, AccountType
 from core.models import DocumentSequence
+from reports.report_generators import calculate_account_balances, generate_balance_sheet
 
 from .models import JournalEntry, JournalLine
 from .serializers import JournalEntrySerializer
-from .services import post_entry
+from .services import post_entry, reverse_entry
 
 
 class JournalEntryTests(APITestCase):
@@ -395,3 +397,126 @@ class JournalEntryDeletionTests(APITestCase):
             JournalEntry.objects.filter(pk=posted.pk).delete()
         self.assertEqual(JournalLine.objects.filter(entry=posted).count(), 2)
         self._entry('draft').delete()
+
+
+class ReversingEntryTests(APITestCase):
+    """POST /api/journal/entries/{id}/reverse/ (DJERP-007, FR3, issue #44)."""
+
+    def setUp(self):
+        self.user = create_user('accountant', role='accountant')
+        self.client.force_authenticate(user=self.user)
+        self.cash = Account.objects.create(code='1000', name='Cash', account_type=AccountType.objects.get(code='AS'))
+        self.revenue = Account.objects.create(
+            code='4000', name='Sales', account_type=AccountType.objects.get(code='RE'),
+        )
+        self.original = self._manual_entry('posted')
+
+    def _manual_entry(self, status_value):
+        response = self.client.post(
+            reverse('journalentry-list'),
+            data={
+                'date': '2026-01-15', 'description': 'Cash sale, booked twice', 'status': status_value,
+                'lines': [
+                    {'account': self.cash.id, 'debit': '150.00', 'credit': '0.00', 'reference': 'R-1'},
+                    {'account': self.revenue.id, 'debit': '0.00', 'credit': '100.00'},
+                    {'account': self.revenue.id, 'debit': '0.00', 'credit': '50.00'},
+                ],
+            },
+            format='json',
+        )
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED, response.data)
+        return JournalEntry.objects.get(pk=response.data['id'])
+
+    def _reverse(self, entry, **body):
+        return self.client.post(reverse('journalentry-reverse', args=[entry.id]), body, format='json')
+
+    def test_reversal_posts_a_linked_mirror_entry(self):
+        response = self._reverse(self.original, date='2026-01-20', description='Duplicate booking')
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED, response.data)
+        reversal = JournalEntry.objects.get(pk=response.data['id'])
+        self.assertEqual(reversal.status, 'posted')
+        self.assertEqual(reversal.reverses, self.original)
+        self.assertEqual(reversal.source_reference, f'reversal:{self.original.pk}')
+        self.assertEqual(str(reversal.date), '2026-01-20')
+        self.assertEqual(reversal.description, 'Duplicate booking')
+        self.assertEqual(response.data['reverses'], self.original.pk)
+
+        def sides(entry, swap=False):
+            return sorted(
+                (line.account_id, *((line.credit, line.debit) if swap else (line.debit, line.credit)), line.reference)
+                for line in entry.lines.all()
+            )
+        self.assertEqual(sides(reversal), sides(self.original, swap=True))
+        original = self.client.get(reverse('journalentry-detail', args=[self.original.id]))
+        self.assertEqual(original.data['reversed_by'], reversal.pk)
+        self.assertEqual(original.data['status'], 'posted')
+
+    def test_pair_nets_every_account_to_zero_and_the_books_balance(self):
+        self._reverse(self.original)
+        for account in (self.cash, self.revenue):
+            with self.subTest(account.code):
+                self.assertEqual(calculate_account_balances([account], '2099-12-31')[0]['balance'], Decimal('0.00'))
+        self.assertTrue(generate_balance_sheet({'as_of_date': '2099-12-31'})['balanced'])
+
+    def test_repeat_call_returns_the_same_reversal(self):
+        first = self._reverse(self.original)
+        second = self._reverse(self.original)
+        self.assertEqual(first.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(second.status_code, status.HTTP_200_OK)
+        self.assertEqual(second.data['id'], first.data['id'])
+        self.assertEqual(JournalEntry.objects.filter(reverses=self.original).count(), 1)
+        self.assertEqual(AuditLog.objects.filter(details__event='journal.reverse').count(), 1)
+
+    def test_reversal_is_audit_logged(self):
+        reversal_number = self._reverse(self.original).data['entry_number']
+        log = AuditLog.objects.get(details__event='journal.reverse')
+        self.assertEqual(log.user, self.user)
+        self.assertEqual(log.model_name, 'journal.JournalEntry')
+        self.assertEqual(log.object_id, str(self.original.pk))
+        self.assertEqual(log.details['reversal'], reversal_number)
+
+    def test_only_posted_manual_entries_can_be_reversed(self):
+        draft = self._manual_entry('draft')
+        voided = self._manual_entry('posted')
+        self.client.patch(reverse('journalentry-detail', args=[voided.id]), {'status': 'voided'}, format='json')
+        document_posting = post_entry(
+            date='2026-01-16', description='Goods receipt', source_reference='grn:GRN-00001',
+            lines=[{'account': self.cash, 'debit': Decimal('10')}, {'account': self.revenue, 'credit': Decimal('10')}],
+        )
+        reversal = JournalEntry.objects.get(pk=self._reverse(self.original).data['id'])
+        for name, entry, says in [
+            ('draft', draft, 'Only a posted entry'),
+            ('voided', voided, 'Only a posted entry'),
+            ('document posting', document_posting, 'correct it through that document'),
+            ('a reversal', reversal, 'is itself a reversal'),
+        ]:
+            with self.subTest(name):
+                response = self._reverse(entry)
+                self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+                self.assertIn(says, str(response.data))
+        self.assertEqual(JournalEntry.objects.filter(reverses__isnull=False).count(), 1)
+
+    def test_reversal_pair_cannot_be_voided(self):
+        reversal = JournalEntry.objects.get(pk=self._reverse(self.original).data['id'])
+        for entry in (self.original, reversal):
+            with self.subTest(entry.entry_number):
+                response = self.client.patch(
+                    reverse('journalentry-detail', args=[entry.id]), {'status': 'voided'}, format='json',
+                )
+                self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+                entry.refresh_from_db()
+                self.assertEqual(entry.status, 'posted')
+
+    def test_bad_date_is_a_400_and_viewers_are_denied(self):
+        self.assertEqual(self._reverse(self.original, date='not-a-date').status_code, status.HTTP_400_BAD_REQUEST)
+        self.client.force_authenticate(user=create_user('viewer', role='viewer'))
+        self.assertEqual(self._reverse(self.original).status_code, status.HTTP_403_FORBIDDEN)
+        self.assertFalse(JournalEntry.objects.filter(reverses__isnull=False).exists())
+
+    def test_service_returns_the_created_flag(self):
+        reversal, created = reverse_entry(self.original, user=self.user)
+        self.assertTrue(created)
+        self.assertEqual(reversal.description, f'Reversal of {self.original.entry_number}')
+        again, created = reverse_entry(self.original, user=self.user)
+        self.assertFalse(created)
+        self.assertEqual(again.pk, reversal.pk)

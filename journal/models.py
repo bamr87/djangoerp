@@ -23,6 +23,11 @@ class JournalEntry(models.Model):
     # event, one entry. Unique (NULLs exempt) so a retried flow cannot double-post the
     # same event; manual API entries leave it null.
     source_reference = models.CharField(max_length=64, unique=True, null=True, blank=True)
+    # Set on a reversing entry (journal.services.reverse_entry): the posted entry it mirrors.
+    # One-to-one, so an entry is reversed at most once; PROTECT keeps the pair together.
+    reverses = models.OneToOneField(
+        'self', null=True, blank=True, on_delete=models.PROTECT, related_name='reversed_by',
+    )
 
     def __str__(self):
         return self.entry_number

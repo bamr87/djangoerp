@@ -1,8 +1,10 @@
 from decimal import Decimal
 
 from django.db import transaction
+from django.utils import timezone
 from rest_framework import serializers
 
+from core.audit import log_event
 from core.models import DocumentSequence
 
 from .models import JournalEntry, JournalLine
@@ -111,3 +113,54 @@ def post_entry(*, date, description, lines, created_by=None, source_reference=No
             for line in cleaned
         )
         return entry
+
+
+def reverse_entry(entry, *, user=None, date=None, description=None):
+    """
+    Correct a posted manual entry by posting its mirror image: the same accounts
+    with debits and credits swapped, through post_entry, linked to the original
+    by ``reverses`` and audit-logged as ``journal.reverse``. The original stays
+    posted, so each period keeps the history it reported (constitution § 2).
+
+    Idempotent: the reversal's ``source_reference`` is ``reversal:<pk>`` and
+    ``reverses`` is one-to-one, so a repeat call returns the existing reversal.
+    Returns ``(reversal, created)``.
+
+    Only posted manual entries (no ``source_reference``) qualify. Drafts and
+    voided entries are not ledger history, a reversal is not reversed again, and
+    an entry a business document posted (goods receipt, shipment, invoice, ...)
+    is corrected through that document so the two cannot drift apart.
+    """
+    with transaction.atomic():
+        entry = JournalEntry.objects.select_for_update().get(pk=entry.pk)
+        existing = JournalEntry.objects.filter(reverses=entry).first()
+        if existing:
+            return existing, False
+        if entry.status != 'posted':
+            raise serializers.ValidationError(
+                f'Only a posted entry can be reversed ({entry.entry_number} is {entry.status})'
+            )
+        if entry.reverses_id:
+            raise serializers.ValidationError(
+                f'{entry.entry_number} is itself a reversal; post a new entry to restore what it reversed'
+            )
+        if entry.source_reference:
+            raise serializers.ValidationError(
+                f'{entry.entry_number} was posted by {entry.source_reference}; correct it through that document'
+            )
+
+        lines = [
+            {'account': line.account, 'debit': line.credit, 'credit': line.debit, 'reference': line.reference}
+            for line in entry.lines.select_related('account')
+        ]
+        reversal = post_entry(
+            date=date or timezone.now().date(),
+            description=description or f'Reversal of {entry.entry_number}',
+            lines=lines,
+            created_by=user,
+            source_reference=f'reversal:{entry.pk}',
+        )
+        reversal.reverses = entry
+        reversal.save(update_fields=['reverses'])
+        log_event(user, 'journal.reverse', entry, {'reversal': reversal.entry_number})
+        return reversal, True

@@ -47,7 +47,7 @@ Every user-facing capability has a stable id in the feature catalog [`features/f
 | [DJERP-004](features/features.yml) | Async financial reports via Celery | shipped | [`djangoerp/celery.py`](djangoerp/celery.py) · [`README.md`](README.md) | TBD |
 | [DJERP-005](features/features.yml) | Swagger/ReDoc API docs | shipped | [`djangoerp/urls.py`](djangoerp/urls.py) · [`README.md`](README.md) | TBD |
 | [DJERP-006](features/features.yml) | Docker / docker-compose with PostgreSQL | shipped | [`docker-compose.yml`](docker-compose.yml) · [`README.md`](README.md) | TBD |
-| [DJERP-007](features/features.yml) | Reversing entries for posted journal entries | planned | [`journal/services.py`](journal/services.py) · [docs](https://github.com/bamr87/djangoerp/issues/44) | FR3 |
+| [DJERP-007](features/features.yml) | Reversing entries for posted journal entries | shipped | [`journal/services.py`](journal/services.py) · [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) | FR3 |
 | [DJERP-008](features/features.yml) | Fiscal periods, lock dates and period-close entry | planned | [`journal/models.py`](journal/models.py) · [docs](https://github.com/bamr87/djangoerp/issues/45) | FR4 |
 
 **Requirement → feature trace**
@@ -65,7 +65,7 @@ Every user-facing capability has a stable id in the feature catalog [`features/f
 
 - FR1: Every business document posts balanced journal entries per the posting matrix (docs/ARCHITECTURE.md)
 - FR2: API authenticated via JWT
-- FR3: Posted journal entries can be corrected by a reversing entry that is idempotent, linked to the original and audit-logged (planned — [#44](https://github.com/bamr87/djangoerp/issues/44), DJERP-007)
+- FR3: Posted journal entries can be corrected by a reversing entry that is idempotent, linked to the original and audit-logged (shipped — `POST /api/journal/entries/{id}/reverse/`, [#44](https://github.com/bamr87/djangoerp/issues/44), DJERP-007)
 - FR4: Fiscal periods and a lock date block postings into closed periods, and period close posts P&L to retained earnings (planned — [#45](https://github.com/bamr87/djangoerp/issues/45), DJERP-008)
 
 **Non-functional**
