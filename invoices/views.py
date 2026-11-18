@@ -2,7 +2,7 @@ from rest_framework import permissions, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
 
-from accounts.permissions import IsAccountant
+from accounts.permissions import IsAccountantOrAuditorReadOnly
 from core.viewsets import ProtectedHistoryDestroyMixin
 
 from . import services
@@ -15,15 +15,10 @@ class InvoiceViewSet(ProtectedHistoryDestroyMixin, viewsets.ModelViewSet):
         'partner', 'sales_order', 'journal_entry'
     ).prefetch_related('line_items').order_by('-created_at')
     serializer_class = InvoiceSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated, IsAccountantOrAuditorReadOnly]
     filterset_fields = ['status', 'customer', 'vendor', 'due_date', 'partner', 'sales_order']
     search_fields = ['invoice_number', 'customer', 'vendor']
     ordering_fields = ['due_date', 'created_at', 'total']
-
-    def get_permissions(self):
-        if self.action == 'post_to_ledger':
-            return [permissions.IsAuthenticated(), IsAccountant()]
-        return super().get_permissions()
 
     def perform_create(self, serializer):
         serializer.save(created_by=self.request.user)
@@ -51,15 +46,10 @@ class InvoiceViewSet(ProtectedHistoryDestroyMixin, viewsets.ModelViewSet):
 class PaymentViewSet(ProtectedHistoryDestroyMixin, viewsets.ModelViewSet):
     queryset = Payment.objects.select_related('invoice', 'journal_entry').order_by('-payment_date')
     serializer_class = PaymentSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated, IsAccountantOrAuditorReadOnly]
     filterset_fields = ['payment_method', 'payment_date', 'invoice']
     search_fields = ['payment_reference']
     ordering_fields = ['payment_date', 'amount']
-
-    def get_permissions(self):
-        if self.action == 'post_to_ledger':
-            return [permissions.IsAuthenticated(), IsAccountant()]
-        return super().get_permissions()
 
     def perform_create(self, serializer):
         serializer.save(created_by=self.request.user)

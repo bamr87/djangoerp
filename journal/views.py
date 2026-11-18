@@ -3,7 +3,7 @@ from rest_framework import filters, permissions, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
 
-from accounts.permissions import IsAccountant
+from accounts.permissions import IsAccountant, IsAccountantOrAuditorReadOnly
 from core.viewsets import ProtectedHistoryDestroyMixin
 
 from . import services
@@ -48,7 +48,7 @@ class JournalLineViewSet(viewsets.ReadOnlyModelViewSet):
     """
     queryset = JournalLine.objects.all()
     serializer_class = JournalLineSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated, IsAccountantOrAuditorReadOnly]
     filter_backends = [DjangoFilterBackend, filters.OrderingFilter]
     filterset_fields = ['entry', 'account']
     ordering_fields = ['entry__date', 'entry__entry_number', 'account__code']

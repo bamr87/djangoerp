@@ -46,20 +46,20 @@ Paths are relative to the host (`http://localhost:8000` in development). Every `
 | GET POST | `/api/journal/entries/` | `JournalEntryViewSet.list/create` | `IsAuthenticated`, `IsAccountant` | API endpoint for journal entries |
 | GET PUT PATCH DELETE | `/api/journal/entries/{pk}/` | `JournalEntryViewSet.retrieve/update/partial_update/destroy` | `IsAuthenticated`, `IsAccountant` | — |
 | POST | `/api/journal/entries/{pk}/reverse/` | `JournalEntryViewSet.reverse_entry` | `IsAuthenticated`, `IsAccountant` | Post a reversing entry for this posted manual entry: the same lines with debits and credits swapped, linked through `reverses`. 201 the first time; a repeat call returns the same reversal with 200. Optional body: {"date": "YYYY-MM-DD", "description": "..."}. |
-| GET | `/api/journal/lines/` | `JournalLineViewSet.list` | `IsAuthenticated` | API endpoint for journal lines (read-only) |
-| GET | `/api/journal/lines/{pk}/` | `JournalLineViewSet.retrieve` | `IsAuthenticated` | — |
+| GET | `/api/journal/lines/` | `JournalLineViewSet.list` | `IsAuthenticated`, `IsAccountantOrAuditorReadOnly` | API endpoint for journal lines (read-only) |
+| GET | `/api/journal/lines/{pk}/` | `JournalLineViewSet.retrieve` | `IsAuthenticated`, `IsAccountantOrAuditorReadOnly` | — |
 | GET | `/api/journal/` | `APIRootView` | `IsAuthenticated` | Provided by `rest_framework`. |
 
 ## `/api/invoices/`
 
 | Method | Path | View | Access | Summary |
 | --- | --- | --- | --- | --- |
-| GET POST | `/api/invoices/invoices/` | `InvoiceViewSet.list/create` | `IsAuthenticated` | — |
-| GET PUT PATCH DELETE | `/api/invoices/invoices/{pk}/` | `InvoiceViewSet.retrieve/update/partial_update/destroy` | `IsAuthenticated` | — |
-| POST | `/api/invoices/invoices/{pk}/post/` | `InvoiceViewSet.post_to_ledger` | `IsAuthenticated`, `IsAccountant` | Post the invoice to the general ledger (Dr partner receivable, Cr revenue). Optional body: {"posting_date": "YYYY-MM-DD"}. |
-| GET POST | `/api/invoices/payments/` | `PaymentViewSet.list/create` | `IsAuthenticated` | — |
-| GET PUT PATCH DELETE | `/api/invoices/payments/{pk}/` | `PaymentViewSet.retrieve/update/partial_update/destroy` | `IsAuthenticated` | — |
-| POST | `/api/invoices/payments/{pk}/post/` | `PaymentViewSet.post_to_ledger` | `IsAuthenticated`, `IsAccountant` | Post the payment to the general ledger (Dr deposit account, Cr partner receivable). |
+| GET POST | `/api/invoices/invoices/` | `InvoiceViewSet.list/create` | `IsAuthenticated`, `IsAccountantOrAuditorReadOnly` | — |
+| GET PUT PATCH DELETE | `/api/invoices/invoices/{pk}/` | `InvoiceViewSet.retrieve/update/partial_update/destroy` | `IsAuthenticated`, `IsAccountantOrAuditorReadOnly` | — |
+| POST | `/api/invoices/invoices/{pk}/post/` | `InvoiceViewSet.post_to_ledger` | `IsAuthenticated`, `IsAccountantOrAuditorReadOnly` | Post the invoice to the general ledger (Dr partner receivable, Cr revenue). Optional body: {"posting_date": "YYYY-MM-DD"}. |
+| GET POST | `/api/invoices/payments/` | `PaymentViewSet.list/create` | `IsAuthenticated`, `IsAccountantOrAuditorReadOnly` | — |
+| GET PUT PATCH DELETE | `/api/invoices/payments/{pk}/` | `PaymentViewSet.retrieve/update/partial_update/destroy` | `IsAuthenticated`, `IsAccountantOrAuditorReadOnly` | — |
+| POST | `/api/invoices/payments/{pk}/post/` | `PaymentViewSet.post_to_ledger` | `IsAuthenticated`, `IsAccountantOrAuditorReadOnly` | Post the payment to the general ledger (Dr deposit account, Cr partner receivable). |
 | GET | `/api/invoices/` | `APIRootView` | `IsAuthenticated` | Provided by `rest_framework`. |
 
 ## `/api/reports/`
@@ -68,9 +68,9 @@ Paths are relative to the host (`http://localhost:8000` in development). Every `
 | --- | --- | --- | --- | --- |
 | GET POST | `/api/reports/templates/` | `ReportTemplateViewSet.list/create` | GET `IsAuthenticated`; POST `IsAuthenticated`, `IsAccountant` | API endpoint for report templates |
 | GET PUT PATCH DELETE | `/api/reports/templates/{pk}/` | `ReportTemplateViewSet.retrieve/update/partial_update/destroy` | GET `IsAuthenticated`; PUT `IsAuthenticated`, `IsAccountant`; PATCH `IsAuthenticated`, `IsAccountant`; DELETE `IsAuthenticated`, `IsAccountant` | — |
-| GET POST | `/api/reports/saved-reports/` | `SavedReportViewSet.list/create` | `IsAuthenticated` | API endpoint for saved reports |
-| GET PUT PATCH DELETE | `/api/reports/saved-reports/{pk}/` | `SavedReportViewSet.retrieve/update/partial_update/destroy` | `IsAuthenticated` | — |
-| POST | `/api/reports/saved-reports/{pk}/regenerate/` | `SavedReportViewSet.regenerate` | `IsAuthenticated` | Regenerate a report with the same parameters |
+| GET POST | `/api/reports/saved-reports/` | `SavedReportViewSet.list/create` | `IsAuthenticated`, `IsAccountantOrReadOnly` | API endpoint for saved reports |
+| GET PUT PATCH DELETE | `/api/reports/saved-reports/{pk}/` | `SavedReportViewSet.retrieve/update/partial_update/destroy` | `IsAuthenticated`, `IsAccountantOrReadOnly` | — |
+| POST | `/api/reports/saved-reports/{pk}/regenerate/` | `SavedReportViewSet.regenerate` | `IsAuthenticated`, `IsAccountantOrReadOnly` | Regenerate a report with the same parameters |
 | GET | `/api/reports/` | `APIRootView` | `IsAuthenticated` | Provided by `rest_framework`. |
 
 ## `/api/partners/`
@@ -161,8 +161,8 @@ Paths are relative to the host (`http://localhost:8000` in development). Every `
 
 | Method | Path | View | Access | Summary |
 | --- | --- | --- | --- | --- |
-| GET POST | `/api/company/companies/` | `CompanyViewSet.list/create` | `IsAuthenticated` | API endpoint for the legal entity/entities this installation keeps books for |
-| GET PUT PATCH DELETE | `/api/company/companies/{pk}/` | `CompanyViewSet.retrieve/update/partial_update/destroy` | `IsAuthenticated` | — |
+| GET POST | `/api/company/companies/` | `CompanyViewSet.list/create` | `IsAuthenticated`, `IsAccountantOrReadOnly` | API endpoint for the legal entity/entities this installation keeps books for |
+| GET PUT PATCH DELETE | `/api/company/companies/{pk}/` | `CompanyViewSet.retrieve/update/partial_update/destroy` | `IsAuthenticated`, `IsAccountantOrReadOnly` | — |
 | GET | `/api/company/` | `APIRootView` | `IsAuthenticated` | Provided by `rest_framework`. |
 
 ## Site root (`company/urls_web.py`)

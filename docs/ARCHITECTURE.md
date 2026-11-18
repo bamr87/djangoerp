@@ -76,6 +76,20 @@ stateDiagram-v2
 
 Sales orders mirror this (`draft -> confirmed -> partially_shipped -> shipped -> invoiced`), work orders run `draft -> confirmed -> in_progress -> completed`, and MRP runs follow the async report pattern (`pending -> running -> completed | failed`). Planned orders promote `planned -> converted` (frePPLe's proposal ladder) or are cancelled.
 
+## API permission matrix
+
+Roles live in `UserRole` and are checked by the classes in `accounts/permissions.py`; an account with no `UserRole` row (a bare superuser included) is denied by every class below.
+
+| Area | Read (GET) | Write (POST, PUT, PATCH, DELETE, posting actions) |
+| --- | --- | --- |
+| Journal entries, stock moves, orders, MRP | accountant | accountant |
+| Journal lines, invoices, payments | accountant, auditor | accountant |
+| Company, saved reports | any role (saved reports: own, or all for accountants) | accountant |
+| Report templates | any authenticated user | accountant |
+| Master data (partners, products, warehouses, BOMs, chart of accounts) | any authenticated user | any authenticated user |
+
+`admin` implies `accountant` and `auditor`. `core/test_permissions.py` walks the ledger, invoice, payment, company and saved-report routes through every role.
+
 ## GL posting matrix
 
 Account resolution is explicit configuration, never guessed: product categories carry `inventory_account`, `revenue_account`, `cogs_account`; partners carry `receivable_account` / `payable_account`; payments carry a `deposit_account`; posting raises a configuration error naming the missing account.
