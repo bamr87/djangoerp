@@ -23,6 +23,11 @@ class JournalEntry(models.Model):
     # event, one entry. Unique (NULLs exempt) so a retried flow cannot double-post the
     # same event; manual API entries leave it null.
     source_reference = models.CharField(max_length=64, unique=True, null=True, blank=True)
+    # Set on a reversing entry (journal.services.reverse_entry): the posted entry it mirrors.
+    # One-to-one, so an entry is reversed at most once; PROTECT keeps the pair together.
+    reverses = models.OneToOneField(
+        'self', null=True, blank=True, on_delete=models.PROTECT, related_name='reversed_by',
+    )
 
     def __str__(self):
         return self.entry_number
@@ -30,12 +35,26 @@ class JournalEntry(models.Model):
 
 class JournalLine(models.Model):
     entry = models.ForeignKey(JournalEntry, related_name='lines', on_delete=models.CASCADE)
-    account = models.ForeignKey(Account, on_delete=models.CASCADE)
+    # PROTECT, like Account.parent_account/account_type: deleting an account must never take
+    # posted ledger lines with it (CASCADE did, unbalancing every entry that touched it).
+    # An account with ledger history is retired with is_active=False instead.
+    account = models.ForeignKey(Account, on_delete=models.PROTECT)
     # Wider than the 12,2 used elsewhere: a large filer's or consolidated ledger's balance
     # sheet can run to hundreds of billions (12,2 caps out below $10bn).
     debit = models.DecimalField(max_digits=20, decimal_places=2, default=0)
     credit = models.DecimalField(max_digits=20, decimal_places=2, default=0)
     reference = models.CharField(max_length=100, blank=True, null=True)
+
+    class Meta:
+        # The database backstop for journal.services.validate_lines: a line is one non-negative
+        # side. Every write path validates first, so these only fire on a raw ORM or admin write.
+        constraints = [
+            models.CheckConstraint(condition=models.Q(debit__gte=0), name='journalline_debit_non_negative'),
+            models.CheckConstraint(condition=models.Q(credit__gte=0), name='journalline_credit_non_negative'),
+            models.CheckConstraint(
+                condition=~models.Q(debit__gt=0, credit__gt=0), name='journalline_debit_or_credit_not_both',
+            ),
+        ]
 
     def __str__(self):
         return f"{self.entry.entry_number}: {self.account.code}"

@@ -6,6 +6,7 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 
 from accounts.permissions import IsAccountant
+from core.viewsets import ProtectedHistoryDestroyMixin
 from invoices.serializers import InvoiceSerializer
 
 from . import services
@@ -13,7 +14,7 @@ from .models import SalesOrder
 from .serializers import SalesOrderSerializer
 
 
-class SalesOrderViewSet(viewsets.ModelViewSet):
+class SalesOrderViewSet(ProtectedHistoryDestroyMixin, viewsets.ModelViewSet):
     """
     API endpoint for sales orders. State transitions are actions (confirm, ship,
     invoice, cancel) backed by sales.services, never direct status writes.

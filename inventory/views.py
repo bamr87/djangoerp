@@ -5,6 +5,7 @@ from rest_framework.response import Response
 
 from accounts.permissions import IsAccountant
 from core.models import DocumentSequence
+from core.viewsets import ProtectedHistoryDestroyMixin
 
 from . import services
 from .models import StockLevel, StockMove, Warehouse
@@ -27,10 +28,12 @@ class WarehouseViewSet(viewsets.ModelViewSet):
         serializer.save(created_by=self.request.user)
 
 
-class StockMoveViewSet(viewsets.ModelViewSet):
+class StockMoveViewSet(ProtectedHistoryDestroyMixin, viewsets.ModelViewSet):
     """
     API endpoint for the stock ledger. Creates drafts (mainly manual
     adjustments); business documents create their own moves through services.
+
+    Only a draft can be deleted; a done move is corrected by an opposing move.
     """
     queryset = StockMove.objects.select_related('product', 'warehouse')
     serializer_class = StockMoveSerializer

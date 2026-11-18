@@ -7,6 +7,10 @@ class AccountType(models.Model):
     """
     Account types such as Asset, Liability, Equity, Revenue, Expense
     """
+    # Seeded by 0002_seed_account_types and hard-coded by reports/report_generators.py for
+    # normal balance and report section, so the API refuses to delete or recode them.
+    SEEDED_CODES = ('AS', 'LI', 'EQ', 'RE', 'EX')
+
     name = models.CharField(max_length=50, unique=True)
     code = models.CharField(max_length=2, unique=True)
     description = models.TextField(blank=True)

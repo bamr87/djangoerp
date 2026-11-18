@@ -1,5 +1,7 @@
 from decimal import Decimal
 
+from django.db import transaction
+from django.db.models import ProtectedError
 from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APITestCase
@@ -8,7 +10,7 @@ from accounts.test_helpers import create_user
 from products.models import Product, UnitOfMeasure
 
 from . import services
-from .models import StockLevel, Warehouse
+from .models import StockLevel, StockMove, Warehouse
 
 
 class StockLedgerTests(APITestCase):
@@ -100,3 +102,25 @@ class StockLedgerTests(APITestCase):
         response = self.client.post(reverse('stockmove-complete', args=[move_id]))
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(services.get_on_hand(self.product, self.warehouse), Decimal('7.000'))
+
+    def test_done_move_cannot_be_deleted(self):
+        # Issue #36: a done move is stock-ledger history; deleting it would desync StockLevel and the GL.
+        move = self.receive('5', '10')
+        response = self.client.delete(reverse('stockmove-detail', args=[move.id]))
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertTrue(StockMove.objects.filter(pk=move.pk).exists())
+        level = StockLevel.objects.get(product=self.product, warehouse=self.warehouse)
+        self.assertEqual(level.quantity_on_hand, Decimal('5.000'))
+        self.assertEqual(level.average_cost, Decimal('10.0000'))
+        with self.assertRaises(ProtectedError), transaction.atomic():
+            move.delete()
+        self.assertEqual(services.get_on_hand(self.product, self.warehouse), Decimal('5.000'))
+
+    def test_draft_move_can_be_deleted(self):
+        draft = services.create_move(
+            product=self.product, warehouse=self.warehouse, move_type='adjustment_in',
+            quantity=Decimal('3'), unit_cost=Decimal('1'), created_by=self.user,
+        )
+        response = self.client.delete(reverse('stockmove-detail', args=[draft.id]))
+        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+        self.assertFalse(StockMove.objects.filter(pk=draft.pk).exists())
