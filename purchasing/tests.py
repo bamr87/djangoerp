@@ -100,3 +100,21 @@ class PurchaseOrderFlowTests(APITestCase):
         services.receive_purchase_order(po, user=self.user)
         with self.assertRaises(Exception):
             services.cancel_purchase_order(po, user=self.user)
+
+    def test_only_a_draft_order_can_be_deleted(self):
+        # Issue #36: a confirmed or received order is document history; cancel it instead.
+        confirmed = self.make_po('10')
+        services.confirm_purchase_order(confirmed, user=self.user)
+        received = self.make_po('10')
+        services.confirm_purchase_order(received, user=self.user)
+        services.receive_purchase_order(received, user=self.user)
+        for po in (confirmed, received):
+            with self.subTest(PurchaseOrder.objects.get(pk=po.pk).status):
+                response = self.client.delete(reverse('purchaseorder-detail', args=[po.id]))
+                self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+                self.assertTrue(PurchaseOrder.objects.filter(pk=po.pk).exists())
+
+        draft = self.make_po('10')
+        response = self.client.delete(reverse('purchaseorder-detail', args=[draft.id]))
+        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+        self.assertFalse(PurchaseOrder.objects.filter(pk=draft.pk).exists())

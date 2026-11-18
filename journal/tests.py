@@ -2,6 +2,7 @@ from decimal import Decimal
 from unittest import mock
 
 from django.db import DatabaseError, IntegrityError, transaction
+from django.db.models import ProtectedError
 from django.urls import reverse
 from rest_framework import serializers as drf_serializers
 from rest_framework import status
@@ -344,3 +345,53 @@ class EntryNumberTests(APITestCase):
         JournalEntry.objects.create(entry_number='JE-00001', date='2026-01-01', status='draft')
         entry = self._system_posting('test:legacy')
         self.assertEqual(entry.entry_number, 'JE-00002')
+
+
+class JournalEntryDeletionTests(APITestCase):
+    """Posted history is immutable: DELETE removes drafts only (issue #36)."""
+
+    def setUp(self):
+        self.user = create_user('accountant', role='accountant')
+        self.client.force_authenticate(user=self.user)
+        self.cash = Account.objects.create(code='1000', name='Cash', account_type=AccountType.objects.get(code='AS'))
+        self.revenue = Account.objects.create(
+            code='4000', name='Sales', account_type=AccountType.objects.get(code='RE'),
+        )
+
+    def _entry(self, status_value):
+        return post_entry(
+            date='2026-01-15', description=f'{status_value} entry', status=status_value,
+            lines=[
+                {'account': self.cash, 'debit': Decimal('100')},
+                {'account': self.revenue, 'credit': Decimal('100')},
+            ],
+        )
+
+    def test_posted_and_voided_entries_cannot_be_deleted(self):
+        posted = self._entry('posted')
+        voided = self._entry('posted')
+        self.client.patch(reverse('journalentry-detail', args=[voided.id]), {'status': 'voided'}, format='json')
+        for entry in (posted, voided):
+            with self.subTest(JournalEntry.objects.get(pk=entry.pk).status):
+                response = self.client.delete(reverse('journalentry-detail', args=[entry.id]))
+                self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+                self.assertIn('cannot be deleted', str(response.data))
+                self.assertTrue(JournalEntry.objects.filter(pk=entry.pk).exists())
+                self.assertEqual(JournalLine.objects.filter(entry=entry).count(), 2)
+
+    def test_draft_entry_can_be_deleted(self):
+        draft = self._entry('draft')
+        response = self.client.delete(reverse('journalentry-detail', args=[draft.id]))
+        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+        self.assertFalse(JournalEntry.objects.filter(pk=draft.pk).exists())
+        self.assertFalse(JournalLine.objects.filter(entry_id=draft.pk).exists())
+
+    def test_orm_cannot_delete_a_posted_entry_either(self):
+        # The guard raises inside Django's delete transaction, so each attempt gets its own savepoint.
+        posted = self._entry('posted')
+        with self.assertRaises(ProtectedError), transaction.atomic():
+            posted.delete()
+        with self.assertRaises(ProtectedError), transaction.atomic():
+            JournalEntry.objects.filter(pk=posted.pk).delete()
+        self.assertEqual(JournalLine.objects.filter(entry=posted).count(), 2)
+        self._entry('draft').delete()

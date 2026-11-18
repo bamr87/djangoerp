@@ -102,3 +102,16 @@ class SalesOrderFlowTests(APITestCase):
         self.assertEqual(so.status, 'partially_shipped')
         line.refresh_from_db()
         self.assertEqual(line.open_quantity, Decimal('3.000'))
+
+    def test_only_a_draft_order_can_be_deleted(self):
+        # Issue #36: a confirmed order is demand MRP already planned against; cancel it instead.
+        confirmed = self.make_so('5')
+        services.confirm_sales_order(confirmed, user=self.user)
+        response = self.client.delete(reverse('salesorder-detail', args=[confirmed.id]))
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertTrue(SalesOrder.objects.filter(pk=confirmed.pk).exists())
+
+        draft = self.make_so('5')
+        response = self.client.delete(reverse('salesorder-detail', args=[draft.id]))
+        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+        self.assertFalse(SalesOrder.objects.filter(pk=draft.pk).exists())

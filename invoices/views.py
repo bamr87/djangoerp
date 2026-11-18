@@ -3,13 +3,14 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 
 from accounts.permissions import IsAccountant
+from core.viewsets import ProtectedHistoryDestroyMixin
 
 from . import services
 from .models import Invoice, Payment
 from .serializers import InvoiceSerializer, PaymentSerializer
 
 
-class InvoiceViewSet(viewsets.ModelViewSet):
+class InvoiceViewSet(ProtectedHistoryDestroyMixin, viewsets.ModelViewSet):
     queryset = Invoice.objects.select_related(
         'partner', 'sales_order', 'journal_entry'
     ).prefetch_related('line_items').order_by('-created_at')
@@ -27,6 +28,12 @@ class InvoiceViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         serializer.save(created_by=self.request.user)
 
+    def check_deletable(self, instance):
+        # Only an unposted draft: a posted invoice (and the payments posted against it) is ledger history.
+        if instance.journal_entry_id:
+            self.refuse_delete(instance, f'it is posted ({instance.journal_entry})')
+        super().check_deletable(instance)
+
     # Named post_to_ledger (not `post`) so the action cannot shadow the HTTP verb
     # handler on non-action routes; the URL stays /invoices/{id}/post/.
     @action(detail=True, methods=['post'], url_path='post', url_name='post')
@@ -41,7 +48,7 @@ class InvoiceViewSet(viewsets.ModelViewSet):
         return Response(self.get_serializer(invoice).data)
 
 
-class PaymentViewSet(viewsets.ModelViewSet):
+class PaymentViewSet(ProtectedHistoryDestroyMixin, viewsets.ModelViewSet):
     queryset = Payment.objects.select_related('invoice', 'journal_entry').order_by('-payment_date')
     serializer_class = PaymentSerializer
     permission_classes = [permissions.IsAuthenticated]
@@ -56,6 +63,11 @@ class PaymentViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         serializer.save(created_by=self.request.user)
+
+    def check_deletable(self, instance):
+        # A payment has no status: it is history once it has posted.
+        if instance.journal_entry_id:
+            self.refuse_delete(instance, f'it is posted ({instance.journal_entry})')
 
     @action(detail=True, methods=['post'], url_path='post', url_name='post')
     def post_to_ledger(self, request, pk=None):

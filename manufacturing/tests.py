@@ -103,3 +103,16 @@ class WorkOrderFlowTests(APITestCase):
             'warehouse': self.warehouse.id, 'quantity': '1',
         }, format='json')
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_only_a_draft_work_order_can_be_deleted(self):
+        # Issue #36: a confirmed work order is scheduled supply; cancel it instead.
+        confirmed = self.make_wo('5')
+        services.confirm_work_order(confirmed, user=self.user)
+        response = self.client.delete(reverse('workorder-detail', args=[confirmed.id]))
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertTrue(WorkOrder.objects.filter(pk=confirmed.pk).exists())
+
+        draft = self.make_wo('5')
+        response = self.client.delete(reverse('workorder-detail', args=[draft.id]))
+        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+        self.assertFalse(WorkOrder.objects.filter(pk=draft.pk).exists())
