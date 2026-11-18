@@ -74,12 +74,12 @@ features:
   - id: DJERP-007
     title: "Reversing entries for posted journal entries"
     description: "POST /api/journal/entries/{id}/reverse/ posts an idempotent mirror entry via post_entry, linked to the original and audit-logged (issue #44)"
-    implemented: false
-    status: planned
+    implemented: true
+    status: shipped
     prd: [FR3]
     surface: api
     link: "journal/services.py"
-    docs: "https://github.com/bamr87/djangoerp/issues/44"
+    docs: "docs/ARCHITECTURE.md"
   - id: DJERP-008
     title: "Fiscal periods, lock dates and period-close entry"
     description: "FiscalPeriod + Company.lock_date block postings into closed periods; a close action posts P&L to retained earnings (issue #45)"
@@ -90,6 +90,15 @@ features:
     link: "journal/models.py"
     docs: "https://github.com/bamr87/djangoerp/issues/45"
   - id: DJERP-009
+    title: "Constitution missions"
+    description: "One direction statement and exactly three numbered missions in constitution §1, with matching README and AGENTS.md taglines linked to that section."
+    implemented: true
+    status: planned
+    prd: [MR1]
+    surface: docs
+    link: "docs/constitution.md"
+    docs: "PRD.md"
+  - id: DJERP-010
     title: "Landing page with setup steps, API map and feedback widget"
     description: "The site root shows the company on file, or setup steps when there is none; maps every API area to its Swagger section; opens with a skip link; and carries the fleet Improve this page widget, which files a prefilled GitHub issue (issues #32, #33, #42)"
     implemented: true

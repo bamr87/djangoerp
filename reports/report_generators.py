@@ -1,10 +1,25 @@
 from datetime import datetime
 
 from celery import shared_task
-from django.db.models import Q, Sum
+from django.db.models import Exists, OuterRef, Q, Sum
 
 from coa.models import Account
 from journal.models import JournalLine
+
+
+def reportable_accounts(as_of_date):
+    """
+    Active accounts, plus retired (is_active=False) ones that still carry posted
+    lines dated on or before ``as_of_date``.
+
+    An account with ledger history cannot be deleted, only retired; its posted
+    balance is still part of the books, so a report that listed active accounts
+    alone would drop it and stop footing.
+    """
+    posted_lines = JournalLine.objects.filter(account=OuterRef('pk'), entry__status='posted')
+    if as_of_date:
+        posted_lines = posted_lines.filter(entry__date__lte=as_of_date)
+    return Account.objects.filter(Q(is_active=True) | Q(Exists(posted_lines))).select_related('account_type')
 
 
 @shared_task
@@ -122,7 +137,7 @@ def generate_trial_balance(parameters):
     """
     as_of_date = parameters.get('as_of_date', datetime.now().strftime('%Y-%m-%d'))
 
-    accounts = Account.objects.filter(is_active=True)
+    accounts = reportable_accounts(as_of_date)
 
     account_balances = []
     total_debits = 0
@@ -189,7 +204,7 @@ def generate_general_ledger(parameters):
         query &= Q(account_id=account_id)
         accounts = Account.objects.filter(id=account_id)
     else:
-        accounts = Account.objects.filter(is_active=True)
+        accounts = reportable_accounts(to_date)
 
     ledger = {}
     for account in accounts:

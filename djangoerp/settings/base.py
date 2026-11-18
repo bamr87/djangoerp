@@ -10,6 +10,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent.parent
 
 environ.Env.read_env(os.path.join(BASE_DIR, '.env'), overwrite=False)
 
+# A development and test fallback only: settings/prod.py reads SECRET_KEY with no default and refuses this value.
 SECRET_KEY = env('SECRET_KEY', default='django-insecure-change-me')
 
 DEBUG = False
@@ -48,6 +49,8 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
+    # First, so its X-Request-Id / X-App-Version reach every response, redirects and static files included.
+    'core.middleware.RequestIdMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
@@ -134,6 +137,8 @@ REST_FRAMEWORK = {
         'rest_framework.filters.SearchFilter',
         'rest_framework.filters.OrderingFilter',
     ],
+    # DRF's handler plus a 409 for a delete a PROTECT/RESTRICT foreign key refuses (else a 500).
+    'EXCEPTION_HANDLER': 'core.exceptions.exception_handler',
 }
 
 # JWT

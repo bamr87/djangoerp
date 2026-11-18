@@ -13,6 +13,10 @@ app_name = 'company'
 
 urlpatterns = [
     path('', views.home, name='home'),
+    # No trailing slash: the fleet contract (hub UPS-BE-10) names the probes GET /healthz and GET /readyz.
+    path('healthz', views.healthz, name='healthz'),
+    path('readyz', views.readyz, name='readyz'),
+    # The original liveness probe, kept for existing callers.
     path('health/', views.health, name='health'),
     # No trailing slash: the fleet contract (UPS-BE-11) names the path GET /version.
     path('version', views.version, name='version'),

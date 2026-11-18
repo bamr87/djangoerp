@@ -10,7 +10,7 @@ from coa.models import Account, AccountType
 from journal.models import JournalEntry, JournalLine
 
 from .models import ReportTemplate, SavedReport
-from .report_generators import generate_balance_sheet, generate_trial_balance
+from .report_generators import generate_balance_sheet, generate_general_ledger, generate_trial_balance
 
 
 class ReportTemplateTests(APITestCase):
@@ -114,3 +114,26 @@ class ReportGeneratorTests(APITestCase):
         result = generate_trial_balance({'as_of_date': '2026-01-31'})
         self.assertTrue(result['balanced'])
         self.assertEqual(result['total_debits'], result['total_credits'])
+
+    def test_retired_account_with_posted_lines_stays_in_the_reports(self):
+        # Accounts with ledger history are retired (is_active=False), never deleted; dropping
+        # one from the trial balance would leave it unbalanced by that account's balance.
+        before = generate_trial_balance({'as_of_date': '2026-01-31'})
+        self.rent.is_active = False
+        self.rent.save()
+        unused = Account.objects.create(code='5100', name='Unused', account_type=self.expense_type, is_active=False)
+
+        after = generate_trial_balance({'as_of_date': '2026-01-31'})
+        self.assertTrue(after['balanced'])
+        self.assertEqual(after['total_debits'], before['total_debits'])
+        codes = [row['account_code'] for row in after['accounts']]
+        self.assertIn(self.rent.code, codes)
+        self.assertNotIn(unused.code, codes)
+
+        # Before the rent was posted, the retired account had nothing to report.
+        self.assertNotIn(self.rent.code, [
+            row['account_code'] for row in generate_trial_balance({'as_of_date': '2026-01-11'})['accounts']
+        ])
+        ledger = generate_general_ledger({'to_date': '2026-01-31'})['ledger']
+        self.assertEqual(ledger[self.rent.code]['ending_balance'], Decimal('200.00'))
+        self.assertNotIn(unused.code, ledger)

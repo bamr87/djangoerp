@@ -2,7 +2,7 @@
   "id": "smoke-home",
   "title": "Landing page renders and is usable",
   "features": [
-    "DJERP-009"
+    "DJERP-010"
   ],
   "path": "verify/scenarios/smoke-home.yml",
   "started": "2026-11-16T02:08:37.779Z",

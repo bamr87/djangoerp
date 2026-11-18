@@ -32,7 +32,7 @@ class HealthEndpointTests(TestCase):
         response = self.client.get(reverse('company:health'))
         self.assertEqual(response.status_code, 200)
         payload = response.json()
-        self.assertEqual(sorted(payload), ['app', 'debug', 'status', 'version'])
+        self.assertEqual(sorted(payload), ['app', 'status', 'version'])  # never `debug`: it leaked configuration
         self.assertEqual(payload['status'], 'ok')
         self.assertEqual(payload['app'], 'djangoerp')
         self.assertEqual(payload['version'], settings.APP_VERSION)

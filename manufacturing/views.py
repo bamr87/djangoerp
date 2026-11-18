@@ -4,6 +4,7 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 
 from accounts.permissions import IsAccountant
+from core.viewsets import ProtectedHistoryDestroyMixin
 
 from . import services
 from .models import BillOfMaterials, WorkOrder
@@ -23,7 +24,7 @@ class BillOfMaterialsViewSet(viewsets.ModelViewSet):
     ordering_fields = ['product__sku', 'created_at']
 
 
-class WorkOrderViewSet(viewsets.ModelViewSet):
+class WorkOrderViewSet(ProtectedHistoryDestroyMixin, viewsets.ModelViewSet):
     """
     API endpoint for work orders. State transitions are actions (confirm, start,
     complete, cancel) backed by manufacturing.services.

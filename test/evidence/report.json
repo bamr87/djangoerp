@@ -12,7 +12,7 @@
       "id": "smoke-home",
       "title": "Landing page renders and is usable",
       "features": [
-        "DJERP-009"
+        "DJERP-010"
       ],
       "ok": true,
       "dir": "test/evidence/smoke-home",

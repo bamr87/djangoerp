@@ -30,7 +30,7 @@
 # the runner executes the whole scenario once per viewport.
 # =============================================================================
 id: smoke-home
-feature: DJERP-009
+feature: DJERP-010
 title: "Landing page renders and is usable"
 description: "The first thing any visitor does: land on the home page, read the setup steps (a fresh database has no company), find the labelled navigation, skip straight to the content from the keyboard, and open the Improve this page widget."
 viewports: [desktop, mobile]
