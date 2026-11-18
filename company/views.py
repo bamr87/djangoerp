@@ -9,6 +9,8 @@ from django.views.decorators.cache import never_cache
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import filters, permissions, viewsets
 
+from accounts.permissions import IsAccountantOrReadOnly
+
 from .models import Company
 from .serializers import CompanySerializer
 
@@ -24,7 +26,7 @@ class CompanyViewSet(viewsets.ModelViewSet):
     """
     queryset = Company.objects.all()
     serializer_class = CompanySerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated, IsAccountantOrReadOnly]
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     filterset_fields = ['is_active', 'currency_code']
     search_fields = ['name', 'legal_name', 'email', 'tax_id']

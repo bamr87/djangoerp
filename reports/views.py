@@ -4,7 +4,7 @@ from rest_framework import filters, permissions, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
 
-from accounts.permissions import IsAccountant
+from accounts.permissions import IsAccountant, IsAccountantOrReadOnly
 
 from .models import ReportTemplate, SavedReport
 from .report_generators import generate_report
@@ -52,7 +52,7 @@ class SavedReportViewSet(viewsets.ModelViewSet):
     """
     queryset = SavedReport.objects.all()
     serializer_class = SavedReportSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated, IsAccountantOrReadOnly]
     filter_backends = [DjangoFilterBackend, filters.SearchFilter]
     filterset_fields = ['template', 'status']
     search_fields = ['name']

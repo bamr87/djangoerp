@@ -59,3 +59,37 @@ class IsAuditor(permissions.BasePermission):
             return request.user.role.role in ('auditor', 'admin')
         except AttributeError:
             return False
+
+
+def _role(user):
+    """The user's role name, or None for an anonymous user or one with no `UserRole` row."""
+    if not user.is_authenticated:
+        return None
+    try:
+        return user.role.role
+    except AttributeError:
+        return None
+
+
+class IsAccountantOrAuditorReadOnly(permissions.BasePermission):
+    """
+    Ledger data: safe methods need the accountant or auditor role (admin implies both),
+    every write needs the accountant role. Viewers and role-less users are denied.
+    """
+    def has_permission(self, request, view):
+        role = _role(request.user)
+        if request.method in permissions.SAFE_METHODS:
+            return role in ('accountant', 'auditor', 'admin')
+        return role in ('accountant', 'admin')
+
+
+class IsAccountantOrReadOnly(permissions.BasePermission):
+    """
+    Safe methods are open to any authenticated user with a role (viewers included),
+    every write needs the accountant role. Role-less users are denied.
+    """
+    def has_permission(self, request, view):
+        role = _role(request.user)
+        if request.method in permissions.SAFE_METHODS:
+            return role is not None
+        return role in ('accountant', 'admin')
