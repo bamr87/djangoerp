@@ -1,0 +1,29 @@
+{
+  "schema": "verify-report/v1",
+  "base": "http://127.0.0.1:8765",
+  "generated": "2026-11-16T02:08:40.499Z",
+  "by": "agent",
+  "run": null,
+  "total": 1,
+  "passed": 1,
+  "failed": 0,
+  "scenarios": [
+    {
+      "id": "smoke-home",
+      "title": "Landing page renders and is usable",
+      "features": [
+        "DJERP-010"
+      ],
+      "ok": true,
+      "dir": "test/evidence/smoke-home",
+      "screenshots": [
+        "test/evidence/smoke-home/desktop-home.png",
+        "test/evidence/smoke-home/desktop-skip-link.png",
+        "test/evidence/smoke-home/desktop-feedback-dialog.png",
+        "test/evidence/smoke-home/mobile-home.png",
+        "test/evidence/smoke-home/mobile-skip-link.png",
+        "test/evidence/smoke-home/mobile-feedback-dialog.png"
+      ]
+    }
+  ]
+}

@@ -62,8 +62,19 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
-# Surfaced by the /health/ endpoint; bump alongside each release tag.
-APP_VERSION = '0.2.0'
+# Served by /health/ and /version. release-please rewrites it in each release PR (release-please-config.json
+# extra-files), so the running version cannot drift from the release tag.
+APP_VERSION = '0.2.0'  # x-release-please-version
+
+# Build identity for /version (UPS-BE-11). The prod image build sets both (Dockerfile build args); when they are
+# unset, /version reports null rather than a guess.
+GIT_SHA = env.str('GIT_SHA', default='') or None
+BUILT_AT = env.str('BUILT_AT', default='') or None
+
+# The fleet "Improve this page" widget (templates/includes/fleet-feedback.html) files issues against this repo and
+# branch; company.context_processors.fleet hands both, with APP_VERSION, to every template.
+FLEET_REPO = 'bamr87/djangoerp'
+FLEET_BRANCH = env('FLEET_BRANCH', default='main')
 
 ROOT_URLCONF = 'djangoerp.urls'
 
@@ -78,6 +89,7 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'company.context_processors.fleet',
             ],
         },
     },
@@ -103,6 +115,10 @@ USE_TZ = True
 
 STATIC_URL = 'static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+# public/ holds the fleet feedback kit's scripts: the hub's `tools/fanout.sh --kit feedback` vendors them there and
+# upgrades them in place, so they stay put. The 'js' prefix serves them where the kit's Django include asks for
+# them, static/js/fleet-feedback.js and static/js/fleet-feedback-capture.js.
+STATICFILES_DIRS = [('js', BASE_DIR / 'public')]
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
@@ -146,7 +162,10 @@ SWAGGER_SETTINGS = {
             'in': 'header',
             'description': 'JWT auth. Use: Bearer <access-token>',
         }
-    }
+    },
+    # /swagger/#/<tag> opens that tag's section; the landing page links each /api/<area>/ prefix there
+    # (company.views.API_AREAS).
+    'DEEP_LINKING': True,
 }
 
 # Celery

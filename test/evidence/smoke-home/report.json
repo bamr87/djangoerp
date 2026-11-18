@@ -1,0 +1,378 @@
+{
+  "id": "smoke-home",
+  "title": "Landing page renders and is usable",
+  "features": [
+    "DJERP-010"
+  ],
+  "path": "verify/scenarios/smoke-home.yml",
+  "started": "2026-11-16T02:08:37.779Z",
+  "viewports": [
+    {
+      "name": "desktop",
+      "width": 1280,
+      "height": 800,
+      "ok": true,
+      "steps": [
+        {
+          "step": "goto",
+          "arg": "/",
+          "ok": true,
+          "ms": 568
+        },
+        {
+          "step": "expect",
+          "arg": {
+            "status": 200
+          },
+          "ok": true,
+          "ms": 0
+        },
+        {
+          "step": "expect",
+          "arg": {
+            "title": "Get started · DjangoERP"
+          },
+          "ok": true,
+          "ms": 16
+        },
+        {
+          "step": "expect",
+          "arg": {
+            "visible": "main#main-content h1"
+          },
+          "ok": true,
+          "ms": 21
+        },
+        {
+          "step": "expect",
+          "arg": {
+            "count": {
+              "selector": "nav[aria-label='Primary'] a",
+              "min": 3
+            }
+          },
+          "ok": true,
+          "value": 3,
+          "ms": 2
+        },
+        {
+          "step": "expect",
+          "arg": {
+            "count": {
+              "selector": "fleet-feedback[repo='bamr87/djangoerp']",
+              "min": 1,
+              "max": 1
+            }
+          },
+          "ok": true,
+          "value": 1,
+          "ms": 1
+        },
+        {
+          "step": "expect",
+          "arg": {
+            "visible": "fleet-feedback button.fab"
+          },
+          "ok": true,
+          "ms": 1
+        },
+        {
+          "step": "expect",
+          "arg": {
+            "no_horizontal_scroll": true
+          },
+          "ok": true,
+          "value": {
+            "sw": 1280,
+            "cw": 1280
+          },
+          "ms": 2
+        },
+        {
+          "step": "expect",
+          "arg": {
+            "no_console_errors": true
+          },
+          "ok": true,
+          "ms": 0
+        },
+        {
+          "step": "screenshot",
+          "arg": "home",
+          "ok": true,
+          "file": "test/evidence/smoke-home/desktop-home.png",
+          "ms": 48
+        },
+        {
+          "step": "press",
+          "arg": "Tab",
+          "ok": true,
+          "ms": 14
+        },
+        {
+          "step": "expect",
+          "arg": {
+            "visible": "a.skip-link[href='#main-content']:focus"
+          },
+          "ok": true,
+          "ms": 2
+        },
+        {
+          "step": "eval",
+          "arg": {
+            "name": "skip_link_top_px_when_focused",
+            "script": "Math.round(document.activeElement.getBoundingClientRect().top)"
+          },
+          "ok": true,
+          "value": 12,
+          "ms": 0
+        },
+        {
+          "step": "screenshot",
+          "arg": "skip-link",
+          "ok": true,
+          "file": "test/evidence/smoke-home/desktop-skip-link.png",
+          "ms": 28
+        },
+        {
+          "step": "click",
+          "arg": "fleet-feedback button.fab",
+          "ok": true,
+          "ms": 83
+        },
+        {
+          "step": "expect",
+          "arg": {
+            "visible": "fleet-feedback dialog[open]"
+          },
+          "ok": true,
+          "ms": 2
+        },
+        {
+          "step": "wait",
+          "arg": {
+            "ms": 500
+          },
+          "ok": true,
+          "ms": 504
+        },
+        {
+          "step": "screenshot",
+          "arg": "feedback-dialog",
+          "ok": true,
+          "file": "test/evidence/smoke-home/desktop-feedback-dialog.png",
+          "ms": 32
+        },
+        {
+          "step": "press",
+          "arg": "Escape",
+          "ok": true,
+          "ms": 3
+        },
+        {
+          "step": "expect",
+          "arg": {
+            "hidden": "fleet-feedback dialog[open]"
+          },
+          "ok": true,
+          "ms": 1
+        }
+      ],
+      "console_errors": [],
+      "screenshots": [
+        "test/evidence/smoke-home/desktop-home.png",
+        "test/evidence/smoke-home/desktop-skip-link.png",
+        "test/evidence/smoke-home/desktop-feedback-dialog.png"
+      ],
+      "evals": {
+        "skip_link_top_px_when_focused": 12
+      },
+      "final_url": "http://127.0.0.1:8765/"
+    },
+    {
+      "name": "mobile",
+      "width": 390,
+      "height": 844,
+      "ok": true,
+      "steps": [
+        {
+          "step": "goto",
+          "arg": "/",
+          "ok": true,
+          "ms": 536
+        },
+        {
+          "step": "expect",
+          "arg": {
+            "status": 200
+          },
+          "ok": true,
+          "ms": 0
+        },
+        {
+          "step": "expect",
+          "arg": {
+            "title": "Get started · DjangoERP"
+          },
+          "ok": true,
+          "ms": 2
+        },
+        {
+          "step": "expect",
+          "arg": {
+            "visible": "main#main-content h1"
+          },
+          "ok": true,
+          "ms": 9
+        },
+        {
+          "step": "expect",
+          "arg": {
+            "count": {
+              "selector": "nav[aria-label='Primary'] a",
+              "min": 3
+            }
+          },
+          "ok": true,
+          "value": 3,
+          "ms": 1
+        },
+        {
+          "step": "expect",
+          "arg": {
+            "count": {
+              "selector": "fleet-feedback[repo='bamr87/djangoerp']",
+              "min": 1,
+              "max": 1
+            }
+          },
+          "ok": true,
+          "value": 1,
+          "ms": 0
+        },
+        {
+          "step": "expect",
+          "arg": {
+            "visible": "fleet-feedback button.fab"
+          },
+          "ok": true,
+          "ms": 1
+        },
+        {
+          "step": "expect",
+          "arg": {
+            "no_horizontal_scroll": true
+          },
+          "ok": true,
+          "value": {
+            "sw": 390,
+            "cw": 390
+          },
+          "ms": 1
+        },
+        {
+          "step": "expect",
+          "arg": {
+            "no_console_errors": true
+          },
+          "ok": true,
+          "ms": 0
+        },
+        {
+          "step": "screenshot",
+          "arg": "home",
+          "ok": true,
+          "file": "test/evidence/smoke-home/mobile-home.png",
+          "ms": 41
+        },
+        {
+          "step": "press",
+          "arg": "Tab",
+          "ok": true,
+          "ms": 1
+        },
+        {
+          "step": "expect",
+          "arg": {
+            "visible": "a.skip-link[href='#main-content']:focus"
+          },
+          "ok": true,
+          "ms": 2
+        },
+        {
+          "step": "eval",
+          "arg": {
+            "name": "skip_link_top_px_when_focused",
+            "script": "Math.round(document.activeElement.getBoundingClientRect().top)"
+          },
+          "ok": true,
+          "value": 12,
+          "ms": 0
+        },
+        {
+          "step": "screenshot",
+          "arg": "skip-link",
+          "ok": true,
+          "file": "test/evidence/smoke-home/mobile-skip-link.png",
+          "ms": 15
+        },
+        {
+          "step": "click",
+          "arg": "fleet-feedback button.fab",
+          "ok": true,
+          "ms": 30
+        },
+        {
+          "step": "expect",
+          "arg": {
+            "visible": "fleet-feedback dialog[open]"
+          },
+          "ok": true,
+          "ms": 1
+        },
+        {
+          "step": "wait",
+          "arg": {
+            "ms": 500
+          },
+          "ok": true,
+          "ms": 501
+        },
+        {
+          "step": "screenshot",
+          "arg": "feedback-dialog",
+          "ok": true,
+          "file": "test/evidence/smoke-home/mobile-feedback-dialog.png",
+          "ms": 17
+        },
+        {
+          "step": "press",
+          "arg": "Escape",
+          "ok": true,
+          "ms": 1
+        },
+        {
+          "step": "expect",
+          "arg": {
+            "hidden": "fleet-feedback dialog[open]"
+          },
+          "ok": true,
+          "ms": 1
+        }
+      ],
+      "console_errors": [],
+      "screenshots": [
+        "test/evidence/smoke-home/mobile-home.png",
+        "test/evidence/smoke-home/mobile-skip-link.png",
+        "test/evidence/smoke-home/mobile-feedback-dialog.png"
+      ],
+      "evals": {
+        "skip_link_top_px_when_focused": 12
+      },
+      "final_url": "http://127.0.0.1:8765/"
+    }
+  ],
+  "ok": true,
+  "finished": "2026-11-16T02:08:40.485Z",
+  "base": "http://127.0.0.1:8765"
+}

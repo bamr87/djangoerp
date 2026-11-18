@@ -66,12 +66,13 @@ Every user-facing capability has a stable id in the feature catalog [`features/f
 | [DJERP-007](features/features.yml) | Reversing entries for posted journal entries | shipped | [`journal/services.py`](journal/services.py) · [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) | FR3 |
 | [DJERP-008](features/features.yml) | Fiscal periods, lock dates and period-close entry | planned | [`journal/models.py`](journal/models.py) · [docs](https://github.com/bamr87/djangoerp/issues/45) | FR4 |
 | [DJERP-009](features/features.yml) | Constitution missions | planned | [`docs/constitution.md`](docs/constitution.md) · [`PRD.md`](PRD.md) | MR1 |
+| [DJERP-010](features/features.yml) | Landing page with setup steps, API map and feedback widget | shipped | route `/` · [`README.md`](README.md) | TBD |
 
 **Requirement → feature trace**
 
 | Requirement | Features |
 | --- | --- |
-| TBD | DJERP-001, DJERP-002, DJERP-003, DJERP-004, DJERP-005, DJERP-006 |
+| TBD | DJERP-001, DJERP-002, DJERP-003, DJERP-004, DJERP-005, DJERP-006, DJERP-010 |
 | FR3 | DJERP-007 |
 | FR4 | DJERP-008 |
 | MR1 | DJERP-009 |

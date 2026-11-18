@@ -1,9 +1,23 @@
-<!DOCTYPE html>
+{% load static %}<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>{% block title %}DjangoERP{% endblock %} · DjangoERP</title>
+    {% include 'includes/fleet-feedback-head.html' %}
+    <title>{% block title %}{% if page_title %}{{ page_title }} · {% endif %}DjangoERP{% endblock %}</title>
+    {% block meta %}{% with description="Modular Django REST ERP: double-entry accounting, inventory, purchasing, sales, manufacturing and MRP planning." %}
+    <meta name="description" content="{{ description }}">
+    <link rel="canonical" href="{{ request.scheme }}://{{ request.get_host }}{{ request.path }}">
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="DjangoERP">
+    <meta property="og:title" content="{{ page_title|default:'DjangoERP' }}">
+    <meta property="og:description" content="{{ description }}">
+    <meta property="og:url" content="{{ request.scheme }}://{{ request.get_host }}{{ request.path }}">
+    <meta name="twitter:card" content="summary">
+    {% endwith %}{% endblock %}
+    <meta name="theme-color" content="#f7f5f0" media="(prefers-color-scheme: light)">
+    <meta name="theme-color" content="#1b1815" media="(prefers-color-scheme: dark)">
+    <link rel="icon" href="{% static 'company/favicon.svg' %}" type="image/svg+xml">
     <style>
         :root {
             --bg: #f7f5f0;
@@ -11,7 +25,8 @@
             --muted: #6b6156;
             --rule: #ddd6c8;
             --accent: #5b3a29;
-            --gold: #b8860b;
+            /* Dark enough for --bg text on it: 5.9:1, WCAG AA (dark mode: 9.0:1). */
+            --gold: #7a5a00;
         }
         @media (prefers-color-scheme: dark) {
             :root {
@@ -39,16 +54,23 @@
             flex-wrap: wrap;
             gap: 1.5rem;
         }
-        header h1 { margin: 0; font-size: 1.15rem; letter-spacing: 0.02em; }
-        header nav a { color: var(--accent); margin-right: 1.25rem; text-decoration: none; }
+        a { color: var(--accent); }
+        .brand { margin: 0; font-size: 1.15rem; font-weight: 700; letter-spacing: 0.02em; }
+        header nav a { margin-right: 1.25rem; text-decoration: none; }
         header nav a:hover { text-decoration: underline; }
         main { max-width: 52rem; margin: 2.5rem auto; padding: 0 2rem; }
-        h2 { margin-top: 0; }
+        main h1 { margin: 0 0 0.75rem; font-size: 1.5rem; }
+        main h2 { font-size: 1.17rem; }
+        ol li { margin: 0.35rem 0; }
         table { border-collapse: collapse; width: 100%; margin: 1rem 0; }
+        caption { caption-side: top; text-align: left; color: var(--muted); font-size: 0.9rem; padding-bottom: 0.4rem; }
         th, td { text-align: left; padding: 0.4rem 0.75rem 0.4rem 0; border-bottom: 1px solid var(--rule); }
         th { color: var(--muted); font-weight: 600; font-size: 0.85rem; text-transform: uppercase; }
         code { background: var(--rule); padding: 0.1rem 0.35rem; border-radius: 0.25rem; font-size: 0.9em; }
         footer { border-top: 1px solid var(--rule); text-align: center; padding: 2rem; color: var(--muted); font-size: 0.9rem; }
+        footer p { margin: 0.25rem 0; }
+        /* The widget's shadow DOM inherits text-align from the footer it is mounted in; its dialog reads left. */
+        fleet-feedback { text-align: start; }
         .badge {
             display: inline-block;
             background: var(--gold);
@@ -58,21 +80,42 @@
             font-size: 0.85rem;
             font-weight: 600;
         }
+        /* Off-screen until it takes keyboard focus as the first stop on the page (UPS-FE-11). */
+        .skip-link {
+            position: absolute;
+            top: 0.75rem;
+            left: 1rem;
+            z-index: 1000;
+            padding: 0.5rem 1rem;
+            border-radius: 0.4rem;
+            background: var(--fg);
+            color: var(--bg);
+            font-weight: 600;
+            text-decoration: none;
+            transform: translateY(-200%);
+        }
+        .skip-link:focus { transform: none; }
+        main:focus { outline: none; }
     </style>
 </head>
 <body>
+    <a class="skip-link" href="#main-content">Skip to content</a>
     <header>
-        <h1>DjangoERP</h1>
-        <nav>
+        <p class="brand">DjangoERP</p>
+        <nav aria-label="Primary">
             <a href="{% url 'company:home' %}">Home</a>
             <a href="{% url 'admin:index' %}">Admin</a>
             <a href="{% url 'schema-swagger-ui' %}">API docs</a>
-            <a href="{% url 'company:health' %}">Health</a>
         </nav>
     </header>
-    <main>
+    <main id="main-content" tabindex="-1">
         {% block content %}{% endblock %}
     </main>
-    <footer>Django + DRF ERP · double-entry core, supply chain, manufacturing, MRP</footer>
+    <footer>
+        <p>Django + DRF ERP · double-entry core, supply chain, manufacturing, MRP</p>
+        {# Health is a JSON probe, not a page, so it sits here rather than in the primary nav. The fleet "Improve #}
+        {# this page" widget renders a floating button and puts its no-JS link here.                           #}
+        <p><a href="{% url 'company:health' %}">Health</a> · {% include 'includes/fleet-feedback.html' %}</p>
+    </footer>
 </body>
 </html>

@@ -54,6 +54,16 @@ RUN SECRET_KEY=build-time-only \
     python manage.py collectstatic --noinput \
     && rm -f build.sqlite3
 
+# Build identity for GET /version, declared after collectstatic so a new commit
+# does not invalidate that layer:
+#   docker build --target prod --build-arg GIT_SHA="$(git rev-parse HEAD)" \
+#     --build-arg BUILT_AT="$(date -u +%Y-%m-%dT%H:%M:%SZ)" .
+# Left empty, /version reports null for both.
+ARG GIT_SHA=""
+ARG BUILT_AT=""
+ENV GIT_SHA=${GIT_SHA} \
+    BUILT_AT=${BUILT_AT}
+
 EXPOSE 8000
 ENTRYPOINT ["entrypoint.sh"]
 CMD ["gunicorn", "djangoerp.wsgi:application", "--bind", "0.0.0.0:8000", "--workers", "3"]

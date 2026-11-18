@@ -1,0 +1,7 @@
+{% comment %}
+templates/includes/fleet-feedback-head.html — the <head> half of the fleet feedback widget.
+
+Include it FIRST in <head>, before any other script: the capture buffer has to be installed before the page's
+own code runs, or a report misses the load-time errors (UPS-FB-04). The body half is the kit's
+includes/fleet-feedback.html; both scripts are vendored in public/ and served as static/js/ (settings.STATICFILES_DIRS).
+{% endcomment %}{% load static %}<script src="{% static 'js/fleet-feedback-capture.js' %}"></script>

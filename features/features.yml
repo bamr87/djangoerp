@@ -98,3 +98,18 @@ features:
     surface: docs
     link: "docs/constitution.md"
     docs: "PRD.md"
+  - id: DJERP-010
+    title: "Landing page with setup steps, API map and feedback widget"
+    description: "The site root shows the company on file, or setup steps when there is none; maps every API area to its Swagger section; opens with a skip link; and carries the fleet Improve this page widget, which files a prefilled GitHub issue (issues #32, #33, #42)"
+    implemented: true
+    status: shipped
+    prd: [TBD]
+    surface: ui
+    link: "/"
+    docs: "README.md"
+    tests: ["company/tests.py"]
+    scenarios: ["verify/scenarios/smoke-home.yml"]
+    evidence: ["test/evidence/smoke-home"]
+    verified:
+      date: 2026-11-16
+      by: agent

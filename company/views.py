@@ -35,10 +35,33 @@ class CompanyViewSet(viewsets.ModelViewSet):
         serializer.save(created_by=self.request.user)
 
 
+# The API areas the landing page lists, in djangoerp/urls.py order, as (label, prefix): each is served under
+# /api/<prefix>/, and drf-yasg tags that area's operations <prefix>, so /swagger/#/<prefix> opens its section.
+API_AREAS = (
+    ('Authentication (JWT)', 'auth'),
+    ('Chart of accounts', 'coa'),
+    ('Journal (double-entry ledger)', 'journal'),
+    ('Invoices & payments', 'invoices'),
+    ('Reports', 'reports'),
+    ('Partners', 'partners'),
+    ('Products', 'products'),
+    ('Inventory', 'inventory'),
+    ('Purchasing', 'purchasing'),
+    ('Sales', 'sales'),
+    ('Manufacturing', 'manufacturing'),
+    ('MRP', 'mrp'),
+    ('Company', 'company'),
+)
+
+
 def home(request):
     """Public landing page: shows the company charter once one is recorded."""
     company = Company.objects.filter(is_active=True).first()
-    return render(request, 'company/home.html', {'company': company})
+    return render(request, 'company/home.html', {
+        'company': company,
+        'page_title': company.name if company else 'Get started',
+        'api_areas': API_AREAS,
+    })
 
 
 @never_cache
@@ -92,4 +115,19 @@ def health(request):
         'status': 'ok',
         'app': 'djangoerp',
         'version': settings.APP_VERSION,
+    })
+
+
+def version(request):
+    """
+    Build identity: the release version and the commit and build time of the running image.
+
+    The hub's UPS-BE-11 contract, exactly {name, version, commit, built_at}. `commit` and `built_at` are null
+    unless the image was built with GIT_SHA / BUILT_AT (see the Dockerfile).
+    """
+    return JsonResponse({
+        'name': 'djangoerp',
+        'version': settings.APP_VERSION,
+        'commit': settings.GIT_SHA,
+        'built_at': settings.BUILT_AT,
     })

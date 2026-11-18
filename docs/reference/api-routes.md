@@ -173,3 +173,4 @@ Paths are relative to the host (`http://localhost:8000` in development). Every `
 | ANY | `/healthz` | `company.views.healthz` | public | Liveness probe (hub UPS-BE-10): 200 `{"status": "ok"}` from a live process; touches no dependency. |
 | ANY | `/readyz` | `company.views.readyz` | public | Readiness probe (hub UPS-BE-10): 200 when the database and the Celery broker answer, else 503 `"degraded"`. |
 | ANY | `/health/` | `company.views.health` | public | Liveness probe for CI smoke tests and deployment healthchecks. |
+| ANY | `/version` | `company.views.version` | public | Build identity: the release version and the commit and build time of the running image. |

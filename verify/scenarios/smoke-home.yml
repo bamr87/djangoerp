@@ -30,14 +30,31 @@
 # the runner executes the whole scenario once per viewport.
 # =============================================================================
 id: smoke-home
-feature: TODO-001
-title: "Home page renders and is usable"
-description: "The first thing any visitor does: land on the home page, see the main content, and find the navigation."
+feature: DJERP-010
+title: "Landing page renders and is usable"
+description: "The first thing any visitor does: land on the home page, read the setup steps (a fresh database has no company), find the labelled navigation, skip straight to the content from the keyboard, and open the Improve this page widget."
 viewports: [desktop, mobile]
 steps:
   - goto: /
   - expect: { status: 200 }
-  - expect: { visible: "main, [role=main], #main-content" }
+  - expect: { title: "Get started · DjangoERP" }
+  - expect: { visible: "main#main-content h1" }
+  - expect: { count: { selector: "nav[aria-label='Primary'] a", min: 3 } }
+  - expect: { count: { selector: "fleet-feedback[repo='bamr87/djangoerp']", min: 1, max: 1 } }
+  # The widget's floating button lives in its open shadow root; Playwright's CSS pierces it.
+  - expect: { visible: "fleet-feedback button.fab" }
   - expect: { no_horizontal_scroll: true }
   - expect: { no_console_errors: true }
   - screenshot: home
+  # The first Tab stop is the skip link, brought on-screen by focus.
+  - press: Tab
+  - expect: { visible: "a.skip-link[href='#main-content']:focus" }
+  - eval: { name: skip_link_top_px_when_focused, script: "Math.round(document.activeElement.getBoundingClientRect().top)" }
+  - screenshot: skip-link
+  - click: "fleet-feedback button.fab"
+  - expect: { visible: "fleet-feedback dialog[open]" }
+  # Let the dialog's fade-in finish before the screenshot.
+  - wait: { ms: 500 }
+  - screenshot: feedback-dialog
+  - press: Escape
+  - expect: { hidden: "fleet-feedback dialog[open]" }
