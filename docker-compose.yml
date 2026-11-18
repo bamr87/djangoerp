@@ -86,9 +86,10 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
-    # Probes company's /health/, and adapts to DEBUGPY_WAIT — see
-    # docker/healthcheck-web.sh. `up --wait` in the VS Code tasks depends on
-    # this being honest about readiness, otherwise attach races startup.
+    # Probes /readyz (the database, plus Redis when Celery is not eager), and
+    # adapts to DEBUGPY_WAIT — see docker/healthcheck-web.sh. `up --wait` in the
+    # VS Code tasks depends on this being honest about readiness, otherwise
+    # attach races startup.
     healthcheck:
       test: ["CMD", "healthcheck-web.sh"]
       interval: 5s
