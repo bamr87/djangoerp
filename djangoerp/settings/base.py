@@ -64,7 +64,7 @@ MIDDLEWARE = [
 
 # Served by /health/ and /version. release-please rewrites it in each release PR (release-please-config.json
 # extra-files), so the running version cannot drift from the release tag.
-APP_VERSION = '0.2.0'  # x-release-please-version
+APP_VERSION = '0.3.0'  # x-release-please-version
 
 # Build identity for /version (UPS-BE-11). The prod image build sets both (Dockerfile build args); when they are
 # unset, /version reports null rather than a guess.
