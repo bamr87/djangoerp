@@ -10,6 +10,66 @@ from .models import JournalEntry, JournalLine
 TWO_PLACES = Decimal('0.01')
 
 
+def validate_lines(lines, *, skip_zero_lines):
+    """
+    The double-entry rules every write path into JournalEntry enforces: the API
+    (JournalEntrySerializer.validate) and system postings (post_entry) both call
+    this, and JournalLine's check constraints back it in the database.
+
+    ``lines`` is an iterable of dicts with ``debit`` and ``credit`` (a missing
+    side is zero). Amounts are quantized to the cent; each line must carry one
+    non-negative side, never both; the entry needs a non-zero debit and a
+    non-zero credit, and the totals must be equal. An all-zero line is dropped
+    when ``skip_zero_lines`` is true (post_entry: a computed posting can produce
+    one) and rejected when it is false (the API: a client sent it).
+
+    Returns the kept lines as new dicts with the quantized amounts; raises DRF's
+    ValidationError naming the first rule broken.
+    """
+    cleaned = []
+    for line in lines:
+        debit = Decimal(line.get('debit') or 0).quantize(TWO_PLACES)
+        credit = Decimal(line.get('credit') or 0).quantize(TWO_PLACES)
+        if debit < 0 or credit < 0:
+            raise serializers.ValidationError('Journal line amounts cannot be negative')
+        if debit and credit:
+            raise serializers.ValidationError('A journal line carries a debit or a credit, not both')
+        if not debit and not credit:
+            if skip_zero_lines:
+                continue
+            raise serializers.ValidationError('A journal line needs a non-zero debit or credit')
+        cleaned.append({**line, 'debit': debit, 'credit': credit})
+
+    if not cleaned:
+        raise serializers.ValidationError('Journal entry must have at least one non-zero line')
+
+    total_debit = sum(line['debit'] for line in cleaned)
+    total_credit = sum(line['credit'] for line in cleaned)
+    if not total_debit or not total_credit:
+        raise serializers.ValidationError('Journal entry needs at least one debit line and one credit line')
+    if total_debit != total_credit:
+        raise serializers.ValidationError(
+            f'Journal entry must balance: debits {total_debit} != credits {total_credit}'
+        )
+    return cleaned
+
+
+def next_entry_number():
+    """
+    Claim the next free number from the ``JE`` sequence, the one series manual
+    (API) and system entries share.
+
+    Numbers already held by an entry numbered outside the sequence (a client-set
+    number from before the API made ``entry_number`` read-only, or one typed in
+    the admin) are skipped, so the sequence walks past them instead of failing
+    the next posting on the unique ``entry_number``.
+    """
+    while True:
+        number = DocumentSequence.next_number('JE')
+        if not JournalEntry.objects.filter(entry_number=number).exists():
+            return number
+
+
 def post_entry(*, date, description, lines, created_by=None, source_reference=None, status='posted'):
     """
     The single programmatic write path into the ledger for system-generated
@@ -17,8 +77,8 @@ def post_entry(*, date, description, lines, created_by=None, source_reference=No
 
     ``lines`` is an iterable of dicts: {'account': Account, 'debit': Decimal,
     'credit': Decimal, 'reference': str}. Enforces the same invariants as
-    JournalEntrySerializer.validate — at least one line, debits equal credits —
-    plus non-negative amounts and a non-zero total.
+    JournalEntrySerializer.validate through validate_lines; all-zero lines are
+    dropped rather than rejected.
 
     Posting is idempotent per ``source_reference``: the column is unique, and a
     second call with the same reference returns the existing entry instead of
@@ -30,33 +90,10 @@ def post_entry(*, date, description, lines, created_by=None, source_reference=No
             if existing:
                 return existing
 
-        cleaned = []
-        for line in lines:
-            debit = Decimal(line.get('debit') or 0).quantize(TWO_PLACES)
-            credit = Decimal(line.get('credit') or 0).quantize(TWO_PLACES)
-            if debit < 0 or credit < 0:
-                raise serializers.ValidationError('Journal line amounts cannot be negative')
-            if debit == 0 and credit == 0:
-                continue
-            cleaned.append({
-                'account': line['account'],
-                'debit': debit,
-                'credit': credit,
-                'reference': line.get('reference') or None,
-            })
-
-        if not cleaned:
-            raise serializers.ValidationError('Journal entry must have at least one non-zero line')
-
-        total_debit = sum(line['debit'] for line in cleaned)
-        total_credit = sum(line['credit'] for line in cleaned)
-        if total_debit != total_credit:
-            raise serializers.ValidationError(
-                f'Journal entry must balance: debits {total_debit} != credits {total_credit}'
-            )
+        cleaned = validate_lines(lines, skip_zero_lines=True)
 
         entry = JournalEntry.objects.create(
-            entry_number=DocumentSequence.next_number('JE'),
+            entry_number=next_entry_number(),
             date=date,
             description=description,
             status=status,
@@ -64,6 +101,13 @@ def post_entry(*, date, description, lines, created_by=None, source_reference=No
             source_reference=source_reference or None,
         )
         JournalLine.objects.bulk_create(
-            JournalLine(entry=entry, **line) for line in cleaned
+            JournalLine(
+                entry=entry,
+                account=line['account'],
+                debit=line['debit'],
+                credit=line['credit'],
+                reference=line.get('reference') or None,
+            )
+            for line in cleaned
         )
         return entry

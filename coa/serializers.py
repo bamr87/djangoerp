@@ -8,6 +8,13 @@ class AccountTypeSerializer(serializers.ModelSerializer):
         model = AccountType
         fields = ['id', 'code', 'name', 'description']
 
+    def validate_code(self, value):
+        if self.instance and self.instance.code in AccountType.SEEDED_CODES and value != self.instance.code:
+            raise serializers.ValidationError(
+                f"{self.instance.code} is a seeded account type the reports depend on; its code cannot change."
+            )
+        return value
+
 
 class AccountSerializer(serializers.ModelSerializer):
     account_type_display = serializers.StringRelatedField(source='account_type', read_only=True)

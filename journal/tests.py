@@ -1,11 +1,19 @@
 from decimal import Decimal
+from unittest import mock
 
+from django.db import DatabaseError, IntegrityError, transaction
 from django.urls import reverse
+from rest_framework import serializers as drf_serializers
 from rest_framework import status
 from rest_framework.test import APITestCase
 
 from accounts.test_helpers import create_user
 from coa.models import Account, AccountType
+from core.models import DocumentSequence
+
+from .models import JournalEntry, JournalLine
+from .serializers import JournalEntrySerializer
+from .services import post_entry
 
 
 class JournalEntryTests(APITestCase):
@@ -149,3 +157,190 @@ class PostEntryServiceTests(APITestCase):
                             source_reference='test:dup')
         self.assertEqual(first.id, second.id)
         self.assertEqual(JournalEntry.objects.filter(source_reference='test:dup').count(), 1)
+
+
+def _invalid_line_shapes(cash, revenue):
+    """The line shapes both write paths must refuse: (name, lines, what the API's 400 says)."""
+    return [
+        ('balanced negative lines', [
+            {'account': cash, 'debit': '-100.00', 'credit': '0.00'},
+            {'account': revenue, 'debit': '0.00', 'credit': '-100.00'},
+        ], 'cannot be negative'),
+        ('one line carrying both sides', [
+            {'account': cash, 'debit': '50.00', 'credit': '50.00'},
+        ], 'not both'),
+        ('a single zero line', [
+            {'account': cash, 'debit': '0.00', 'credit': '0.00'},
+        ], 'needs a non-zero debit or credit'),
+        ('no non-zero credit', [
+            {'account': cash, 'debit': '100.00', 'credit': '0.00'},
+        ], 'one debit line and one credit line'),
+    ]
+
+
+class JournalLineRulesTests(APITestCase):
+    """The API and post_entry enforce the same line rules (journal.services.validate_lines)."""
+
+    def setUp(self):
+        self.user = create_user('accountant', role='accountant')
+        self.client.force_authenticate(user=self.user)
+        self.cash = Account.objects.create(code='1000', name='Cash', account_type=AccountType.objects.get(code='AS'))
+        self.revenue = Account.objects.create(
+            code='4000', name='Sales', account_type=AccountType.objects.get(code='RE'),
+        )
+
+    def _post(self, lines, status_value='posted', **extra):
+        return self.client.post(
+            reverse('journalentry-list'),
+            data={'date': '2026-01-15', 'status': status_value, 'lines': lines, **extra},
+            format='json',
+        )
+
+    def test_api_rejects_every_invalid_line_shape(self):
+        for name, lines, says in _invalid_line_shapes(self.cash.id, self.revenue.id):
+            with self.subTest(name):
+                response = self._post(lines)
+                self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST, response.data)
+                self.assertIn(says, str(response.data))
+        self.assertFalse(JournalEntry.objects.exists())
+
+    def test_api_rejects_a_zero_line_beside_valid_ones(self):
+        response = self._post([
+            {'account': self.cash.id, 'debit': '100.00', 'credit': '0.00'},
+            {'account': self.revenue.id, 'debit': '0.00', 'credit': '100.00'},
+            {'account': self.cash.id, 'debit': '0.00', 'credit': '0.00'},
+        ])
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn('needs a non-zero debit or credit', str(response.data))
+
+    def test_post_entry_rejects_every_invalid_line_shape(self):
+        for name, lines, _ in _invalid_line_shapes(self.cash, self.revenue):
+            with self.subTest(name):
+                with self.assertRaises(drf_serializers.ValidationError):
+                    post_entry(date='2026-01-15', description=name, lines=lines)
+        self.assertFalse(JournalEntry.objects.exists())
+
+    def test_post_entry_still_drops_zero_lines_among_valid_ones(self):
+        entry = post_entry(
+            date='2026-01-15', description='computed posting',
+            lines=[
+                {'account': self.cash, 'debit': Decimal('100')},
+                {'account': self.revenue, 'credit': Decimal('100')},
+                {'account': self.cash, 'debit': Decimal('0'), 'credit': Decimal('0')},
+            ],
+        )
+        self.assertEqual(entry.lines.count(), 2)
+
+    def test_database_refuses_negative_and_two_sided_lines(self):
+        entry = JournalEntry.objects.create(entry_number='ORM-1', date='2026-01-15')
+        for name, amounts in [
+            ('negative debit', {'debit': Decimal('-1')}),
+            ('negative credit', {'credit': Decimal('-1')}),
+            ('both sides', {'debit': Decimal('1'), 'credit': Decimal('1')}),
+        ]:
+            with self.subTest(name):
+                with self.assertRaises(IntegrityError), transaction.atomic():
+                    JournalLine.objects.create(entry=entry, account=self.cash, **amounts)
+        self.assertFalse(JournalLine.objects.exists())
+
+    def test_failed_line_write_leaves_no_entry(self):
+        real_create = JournalLine.objects.create
+        calls = []
+
+        def create_then_fail(**kwargs):
+            calls.append(kwargs)
+            if len(calls) == 2:
+                raise DatabaseError('simulated failure on the second line')
+            return real_create(**kwargs)
+
+        with mock.patch.object(JournalLine.objects, 'create', side_effect=create_then_fail):
+            with self.assertRaises(DatabaseError):
+                self._post([
+                    {'account': self.cash.id, 'debit': '100.00', 'credit': '0.00'},
+                    {'account': self.revenue.id, 'debit': '0.00', 'credit': '100.00'},
+                ])
+        self.assertFalse(JournalEntry.objects.exists())
+        self.assertFalse(JournalLine.objects.exists())
+
+    def test_patch_posts_a_balanced_draft_without_resending_lines(self):
+        draft = self._post([
+            {'account': self.cash.id, 'debit': '100.00', 'credit': '0.00'},
+            {'account': self.revenue.id, 'debit': '0.00', 'credit': '100.00'},
+        ], status_value='draft')
+        self.assertEqual(draft.status_code, status.HTTP_201_CREATED)
+        response = self.client.patch(
+            reverse('journalentry-detail', args=[draft.data['id']]), data={'status': 'posted'}, format='json',
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK, response.data)
+        self.assertEqual(JournalEntry.objects.get(pk=draft.data['id']).status, 'posted')
+
+    def test_patch_cannot_post_a_draft_whose_kept_lines_do_not_balance(self):
+        # A draft written outside the API (raw ORM, admin) is still checked when it is posted.
+        draft = JournalEntry.objects.create(entry_number='ORM-2', date='2026-01-15', status='draft')
+        JournalLine.objects.create(entry=draft, account=self.cash, debit=Decimal('100'))
+        JournalLine.objects.create(entry=draft, account=self.revenue, credit=Decimal('60'))
+        response = self.client.patch(
+            reverse('journalentry-detail', args=[draft.id]), data={'status': 'posted'}, format='json',
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn('must balance', str(response.data))
+        draft.refresh_from_db()
+        self.assertEqual(draft.status, 'draft')
+
+
+class EntryNumberTests(APITestCase):
+    """Manual and system entries draw from the one JE sequence; a client number is ignored."""
+
+    def setUp(self):
+        self.user = create_user('accountant', role='accountant')
+        self.client.force_authenticate(user=self.user)
+        self.cash = Account.objects.create(code='1000', name='Cash', account_type=AccountType.objects.get(code='AS'))
+        self.revenue = Account.objects.create(
+            code='4000', name='Sales', account_type=AccountType.objects.get(code='RE'),
+        )
+        self.lines = [
+            {'account': self.cash.id, 'debit': '100.00', 'credit': '0.00'},
+            {'account': self.revenue.id, 'debit': '0.00', 'credit': '100.00'},
+        ]
+
+    def _system_posting(self, reference):
+        return post_entry(
+            date='2026-01-16', description='system posting', source_reference=reference,
+            lines=[
+                {'account': self.cash, 'debit': Decimal('10')},
+                {'account': self.revenue, 'credit': Decimal('10')},
+            ],
+        )
+
+    def test_entry_number_is_read_only(self):
+        self.assertIn('entry_number', JournalEntrySerializer.Meta.read_only_fields)
+
+    def test_manual_entry_number_cannot_collide_with_the_next_system_posting(self):
+        # Issue #39: a manual entry claiming JE-00001 used to make this post_entry raise IntegrityError.
+        response = self.client.post(
+            reverse('journalentry-list'),
+            data={'entry_number': 'JE-00001', 'date': '2026-01-15', 'status': 'posted', 'lines': self.lines},
+            format='json',
+        )
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(response.data['entry_number'], 'JE-00001')
+        self.assertEqual(DocumentSequence.objects.get(prefix='JE').next_value, 2)
+        entry = self._system_posting('test:after-manual')
+        self.assertEqual(entry.entry_number, 'JE-00002')
+
+    def test_client_entry_number_is_ignored(self):
+        response = self.client.post(
+            reverse('journalentry-list'),
+            data={'entry_number': 'JE-00002', 'date': '2026-01-15', 'status': 'posted', 'lines': self.lines},
+            format='json',
+        )
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(response.data['entry_number'], 'JE-00001')
+        numbers = [self._system_posting(f'test:{n}').entry_number for n in (1, 2)]
+        self.assertEqual(numbers, ['JE-00002', 'JE-00003'])
+
+    def test_sequence_skips_a_number_an_older_entry_already_holds(self):
+        # An entry numbered by hand before entry_number became read-only (or in the admin).
+        JournalEntry.objects.create(entry_number='JE-00001', date='2026-01-01', status='draft')
+        entry = self._system_posting('test:legacy')
+        self.assertEqual(entry.entry_number, 'JE-00002')

@@ -118,6 +118,8 @@ REST_FRAMEWORK = {
         'rest_framework.filters.SearchFilter',
         'rest_framework.filters.OrderingFilter',
     ],
+    # DRF's handler plus a 409 for a delete a PROTECT/RESTRICT foreign key refuses (else a 500).
+    'EXCEPTION_HANDLER': 'core.exceptions.exception_handler',
 }
 
 # JWT
