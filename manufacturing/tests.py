@@ -97,6 +97,47 @@ class WorkOrderFlowTests(APITestCase):
         self.assertEqual(sum(line.debit for line in entry.lines.all()),
                          sum(line.credit for line in entry.lines.all()))
 
+    def test_complete_absorbs_conversion_costs_into_finished_goods(self):
+        from coa.models import Account, AccountType
+
+        absorbed = Account.objects.create(
+            code='5390', name='Production costs absorbed', account_type=AccountType.objects.get(code='EX'),
+        )
+        self.stock(self.demo['products']['frame'], '10', '40')
+        self.stock(self.demo['products']['wheel'], '20', '15')
+        wo = self.make_wo('5')
+        services.confirm_work_order(wo, user=self.user)
+        result = services.complete_work_order(
+            wo, user=self.user, completion_date=date(2026, 6, 9),
+            conversion_costs=[
+                {'account': absorbed, 'amount': Decimal('100.004'), 'label': 'direct labor'},
+                {'account': absorbed, 'amount': Decimal('25'), 'label': 'machine overhead'},
+                {'account': absorbed, 'amount': Decimal('0'), 'label': 'nothing'},
+            ],
+        )
+        # 350 of components + 125.00 absorbed conversion = 475.00 -> widget unit cost 95.
+        self.assertEqual(result['receipt_move'].total_value, Decimal('475.00'))
+        self.assertEqual(result['receipt_move'].unit_cost, Decimal('95.0000'))
+        lines = list(result['journal_entry'].lines.select_related('account'))
+        self.assertEqual(sum(line.debit for line in lines), Decimal('475.00'))
+        self.assertEqual(sum(line.credit for line in lines), Decimal('475.00'))
+        self.assertEqual(sum(line.credit for line in lines if line.account == absorbed), Decimal('125.00'))
+
+    def test_negative_conversion_cost_is_refused_before_anything_moves(self):
+        self.stock(self.demo['products']['frame'], '10', '40')
+        self.stock(self.demo['products']['wheel'], '20', '15')
+        wo = self.make_wo('5')
+        services.confirm_work_order(wo, user=self.user)
+        with self.assertRaises(Exception):
+            services.complete_work_order(
+                wo, user=self.user,
+                conversion_costs=[{'account': self.demo['accounts']['cogs'], 'amount': Decimal('-1')}],
+            )
+        wo.refresh_from_db()
+        self.assertEqual(wo.status, 'confirmed')
+        self.assertEqual(inventory_services.get_on_hand(self.demo['products']['frame'], self.warehouse),
+                         Decimal('10.000'))
+
     def test_bom_must_match_product_via_api(self):
         response = self.client.post(reverse('workorder-list'), {
             'product': self.demo['products']['frame'].id, 'bom': self.demo['bom'].id,
