@@ -1,0 +1,390 @@
+{
+  "id": "simulation-console",
+  "title": "Simulation console loads and offers sign-in",
+  "features": [
+    "DJERP-013"
+  ],
+  "path": "verify/scenarios/simulation-console.yml",
+  "started": "2026-11-20T23:30:11.338Z",
+  "viewports": [
+    {
+      "name": "desktop",
+      "width": 1280,
+      "height": 800,
+      "ok": true,
+      "steps": [
+        {
+          "step": "goto",
+          "arg": "/console/",
+          "ok": true,
+          "ms": 627
+        },
+        {
+          "step": "expect",
+          "arg": {
+            "status": 200
+          },
+          "ok": true,
+          "ms": 0
+        },
+        {
+          "step": "expect",
+          "arg": {
+            "title": "Simulation console · DjangoERP"
+          },
+          "ok": true,
+          "ms": 7
+        },
+        {
+          "step": "wait",
+          "arg": {
+            "selector": "form input[name='username']"
+          },
+          "ok": true,
+          "ms": 34
+        },
+        {
+          "step": "expect",
+          "arg": {
+            "visible": "h1:has-text('Sign in to the sandbox')"
+          },
+          "ok": true,
+          "ms": 7
+        },
+        {
+          "step": "expect",
+          "arg": {
+            "visible": "label:has-text('Username') input[name='username']"
+          },
+          "ok": true,
+          "ms": 4
+        },
+        {
+          "step": "expect",
+          "arg": {
+            "visible": "label:has-text('Password') input[type='password']"
+          },
+          "ok": true,
+          "ms": 4
+        },
+        {
+          "step": "expect",
+          "arg": {
+            "visible": "button[type='submit']:has-text('Sign in')"
+          },
+          "ok": true,
+          "ms": 7
+        },
+        {
+          "step": "expect",
+          "arg": {
+            "hidden": "nav#tabs"
+          },
+          "ok": true,
+          "ms": 4
+        },
+        {
+          "step": "expect",
+          "arg": {
+            "count": {
+              "selector": "fleet-feedback[repo='bamr87/djangoerp']",
+              "min": 1,
+              "max": 1
+            }
+          },
+          "ok": true,
+          "value": 1,
+          "ms": 2
+        },
+        {
+          "step": "expect",
+          "arg": {
+            "no_horizontal_scroll": true
+          },
+          "ok": true,
+          "value": {
+            "sw": 1280,
+            "cw": 1280
+          },
+          "ms": 3
+        },
+        {
+          "step": "expect",
+          "arg": {
+            "no_console_errors": true
+          },
+          "ok": true,
+          "ms": 0
+        },
+        {
+          "step": "screenshot",
+          "arg": "sign-in",
+          "ok": true,
+          "file": "test/evidence/simulation-console/desktop-sign-in.png",
+          "ms": 50
+        },
+        {
+          "step": "press",
+          "arg": "Tab",
+          "ok": true,
+          "ms": 4
+        },
+        {
+          "step": "expect",
+          "arg": {
+            "visible": "a.skip-link[href='#main-content']:focus"
+          },
+          "ok": true,
+          "ms": 4
+        },
+        {
+          "step": "fill",
+          "arg": {
+            "selector": "input[name='username']",
+            "value": "nobody"
+          },
+          "ok": true,
+          "ms": 11
+        },
+        {
+          "step": "fill",
+          "arg": {
+            "selector": "input[name='password']",
+            "value": "not-a-password"
+          },
+          "ok": true,
+          "ms": 7
+        },
+        {
+          "step": "press",
+          "arg": "Enter",
+          "ok": true,
+          "ms": 3
+        },
+        {
+          "step": "wait",
+          "arg": {
+            "selector": "p.error[role='alert']:not(:empty)"
+          },
+          "ok": true,
+          "ms": 285
+        },
+        {
+          "step": "expect",
+          "arg": {
+            "text": "No active account found"
+          },
+          "ok": true,
+          "ms": 2
+        },
+        {
+          "step": "screenshot",
+          "arg": "sign-in-refused",
+          "ok": true,
+          "file": "test/evidence/simulation-console/desktop-sign-in-refused.png",
+          "ms": 50
+        }
+      ],
+      "console_errors": [
+        "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
+      ],
+      "screenshots": [
+        "test/evidence/simulation-console/desktop-sign-in.png",
+        "test/evidence/simulation-console/desktop-sign-in-refused.png"
+      ],
+      "evals": {},
+      "final_url": "http://127.0.0.1:8766/console/"
+    },
+    {
+      "name": "mobile",
+      "width": 390,
+      "height": 844,
+      "ok": true,
+      "steps": [
+        {
+          "step": "goto",
+          "arg": "/console/",
+          "ok": true,
+          "ms": 595
+        },
+        {
+          "step": "expect",
+          "arg": {
+            "status": 200
+          },
+          "ok": true,
+          "ms": 0
+        },
+        {
+          "step": "expect",
+          "arg": {
+            "title": "Simulation console · DjangoERP"
+          },
+          "ok": true,
+          "ms": 4
+        },
+        {
+          "step": "wait",
+          "arg": {
+            "selector": "form input[name='username']"
+          },
+          "ok": true,
+          "ms": 21
+        },
+        {
+          "step": "expect",
+          "arg": {
+            "visible": "h1:has-text('Sign in to the sandbox')"
+          },
+          "ok": true,
+          "ms": 3
+        },
+        {
+          "step": "expect",
+          "arg": {
+            "visible": "label:has-text('Username') input[name='username']"
+          },
+          "ok": true,
+          "ms": 3
+        },
+        {
+          "step": "expect",
+          "arg": {
+            "visible": "label:has-text('Password') input[type='password']"
+          },
+          "ok": true,
+          "ms": 3
+        },
+        {
+          "step": "expect",
+          "arg": {
+            "visible": "button[type='submit']:has-text('Sign in')"
+          },
+          "ok": true,
+          "ms": 3
+        },
+        {
+          "step": "expect",
+          "arg": {
+            "hidden": "nav#tabs"
+          },
+          "ok": true,
+          "ms": 3
+        },
+        {
+          "step": "expect",
+          "arg": {
+            "count": {
+              "selector": "fleet-feedback[repo='bamr87/djangoerp']",
+              "min": 1,
+              "max": 1
+            }
+          },
+          "ok": true,
+          "value": 1,
+          "ms": 1
+        },
+        {
+          "step": "expect",
+          "arg": {
+            "no_horizontal_scroll": true
+          },
+          "ok": true,
+          "value": {
+            "sw": 390,
+            "cw": 390
+          },
+          "ms": 2
+        },
+        {
+          "step": "expect",
+          "arg": {
+            "no_console_errors": true
+          },
+          "ok": true,
+          "ms": 0
+        },
+        {
+          "step": "screenshot",
+          "arg": "sign-in",
+          "ok": true,
+          "file": "test/evidence/simulation-console/mobile-sign-in.png",
+          "ms": 29
+        },
+        {
+          "step": "press",
+          "arg": "Tab",
+          "ok": true,
+          "ms": 2
+        },
+        {
+          "step": "expect",
+          "arg": {
+            "visible": "a.skip-link[href='#main-content']:focus"
+          },
+          "ok": true,
+          "ms": 3
+        },
+        {
+          "step": "fill",
+          "arg": {
+            "selector": "input[name='username']",
+            "value": "nobody"
+          },
+          "ok": true,
+          "ms": 6
+        },
+        {
+          "step": "fill",
+          "arg": {
+            "selector": "input[name='password']",
+            "value": "not-a-password"
+          },
+          "ok": true,
+          "ms": 5
+        },
+        {
+          "step": "press",
+          "arg": "Enter",
+          "ok": true,
+          "ms": 2
+        },
+        {
+          "step": "wait",
+          "arg": {
+            "selector": "p.error[role='alert']:not(:empty)"
+          },
+          "ok": true,
+          "ms": 785
+        },
+        {
+          "step": "expect",
+          "arg": {
+            "text": "No active account found"
+          },
+          "ok": true,
+          "ms": 1
+        },
+        {
+          "step": "screenshot",
+          "arg": "sign-in-refused",
+          "ok": true,
+          "file": "test/evidence/simulation-console/mobile-sign-in-refused.png",
+          "ms": 35
+        }
+      ],
+      "console_errors": [
+        "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
+      ],
+      "screenshots": [
+        "test/evidence/simulation-console/mobile-sign-in.png",
+        "test/evidence/simulation-console/mobile-sign-in-refused.png"
+      ],
+      "evals": {},
+      "final_url": "http://127.0.0.1:8766/console/"
+    }
+  ],
+  "ok": true,
+  "finished": "2026-11-20T23:30:14.035Z",
+  "base": "http://127.0.0.1:8766"
+}

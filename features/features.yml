@@ -113,3 +113,58 @@ features:
     verified:
       date: 2026-11-16
       by: agent
+  - id: DJERP-011
+    title: "Agent simulation sandbox"
+    description: "A time-stepped economy whose agents (market, customers, suppliers, sales manager, buyer, planner, line crews, machines, maintenance, plant manager, controller) act only through the ERP's services on a database flagged SIMULATION_SANDBOX; each tick is one transaction that leaves the trial balance and balance sheet balanced and the stock, receivables, payables and fixed-asset subledgers reconciled with the GL, or rolls back and halts (manage.py simulate, /api/simulation/)"
+    implemented: true
+    status: shipped
+    prd: [FR5, FR6]
+    surface: api
+    link: "simulation/engine.py"
+    docs: "simulation/README.md"
+    tests: ["simulation/tests.py"]
+  - id: DJERP-012
+    title: "Claude-driven agents with bounded decisions"
+    description: "Any reviewing agent can be driven by a small Claude model (claude-haiku-5-5 by default) through structured outputs: answers are clamped to each field's bounds, invalid or refused answers and API errors fall back to the heuristic policy, a per-tick call budget applies, and every call's token cost is posted to account 6300"
+    implemented: true
+    status: shipped
+    prd: [FR7]
+    surface: api
+    link: "simulation/brains.py"
+    docs: "docs/adr/0003-agent-simulation-sandbox.md"
+    tests: ["simulation/tests.py"]
+  - id: DJERP-013
+    title: "Simulation console"
+    description: "A JWT-authenticated browser console at /console/ showing live KPIs and trends, the financial statements from the report generators with ledger drill-down, operations, the agent roster and decision log with document-to-journal tracing, every simulation parameter as a control, a what-if lab and the system map (roles, posting matrix, invariants)"
+    implemented: true
+    status: shipped
+    prd: [FR8]
+    surface: ui
+    link: "/console/"
+    docs: "simulation/README.md"
+    tests: ["simulation/tests.py"]
+    scenarios: ["verify/scenarios/simulation-console.yml"]
+    evidence: ["test/evidence/simulation-console"]
+    verified:
+      date: 2026-11-20
+      by: agent
+  - id: DJERP-014
+    title: "What-if experiments"
+    description: "Compare a baseline and a variant (new production lines, shift changes, retirements, price moves, parameter overrides) from the scenario's current state on common random numbers; both arms run inside rolled-back transactions and only the comparison — costs by driver, unit costs, margins, cash, utilization, service, payback — is kept"
+    implemented: true
+    status: shipped
+    prd: [FR9]
+    surface: api
+    link: "simulation/experiments.py"
+    docs: "simulation/README.md"
+    tests: ["simulation/tests.py"]
+  - id: DJERP-015
+    title: "Labor and overhead absorption in work-order completion"
+    description: "manufacturing.services.complete_work_order accepts conversion_costs: labor and overhead absorbed into the finished good's value, credited to an absorption account, so absorption costing keeps the stock ledger and the GL equal"
+    implemented: true
+    status: shipped
+    prd: [FR10]
+    surface: api
+    link: "manufacturing/services.py"
+    docs: "docs/adr/0002-absorb-conversion-costs-into-finished-goods.md"
+    tests: ["manufacturing/tests.py"]

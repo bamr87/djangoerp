@@ -18,3 +18,6 @@ DATABASES = {
 # to prod settings; the default is unchanged.
 CELERY_TASK_ALWAYS_EAGER = env.bool('CELERY_TASK_ALWAYS_EAGER', default=True)  # noqa: F405
 CELERY_TASK_EAGER_PROPAGATES = env.bool('CELERY_TASK_EAGER_PROPAGATES', default=True)  # noqa: F405
+
+# The dev database is a sandbox: simulated agents may post to it (simulation/). Prod keeps the base default, off.
+SIMULATION_SANDBOX = env.bool('SIMULATION_SANDBOX', default=True)  # noqa: F405

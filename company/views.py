@@ -53,6 +53,7 @@ API_AREAS = (
     ('Manufacturing', 'manufacturing'),
     ('MRP', 'mrp'),
     ('Company', 'company'),
+    ('Simulation sandbox (agents, what-ifs)', 'simulation'),
 )
 
 

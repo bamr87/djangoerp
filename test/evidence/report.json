@@ -1,13 +1,28 @@
 {
   "schema": "verify-report/v1",
-  "base": "http://127.0.0.1:8765",
-  "generated": "2026-11-16T02:08:40.499Z",
+  "base": "http://127.0.0.1:8766",
+  "generated": "2026-11-20T23:30:14.083Z",
   "by": "agent",
   "run": null,
-  "total": 1,
-  "passed": 1,
+  "total": 2,
+  "passed": 2,
   "failed": 0,
   "scenarios": [
+    {
+      "id": "simulation-console",
+      "title": "Simulation console loads and offers sign-in",
+      "features": [
+        "DJERP-013"
+      ],
+      "ok": true,
+      "dir": "test/evidence/simulation-console",
+      "screenshots": [
+        "test/evidence/simulation-console/desktop-sign-in.png",
+        "test/evidence/simulation-console/desktop-sign-in-refused.png",
+        "test/evidence/simulation-console/mobile-sign-in.png",
+        "test/evidence/simulation-console/mobile-sign-in-refused.png"
+      ]
+    },
     {
       "id": "smoke-home",
       "title": "Landing page renders and is usable",

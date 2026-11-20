@@ -1,0 +1,50 @@
+{% load static %}<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    {% include 'includes/fleet-feedback-head.html' %}
+    <title>Simulation console · DjangoERP</title>
+    <meta name="description" content="Drive and inspect DjangoERP's agent simulation sandbox: live financial statements, operations, agent decisions, parameter controls and what-if experiments, all compiled from the double-entry ledger.">
+    <meta name="theme-color" content="#f7f5f0" media="(prefers-color-scheme: light)">
+    <meta name="theme-color" content="#1b1815" media="(prefers-color-scheme: dark)">
+    <link rel="icon" href="{% static 'company/favicon.svg' %}" type="image/svg+xml">
+    <link rel="stylesheet" href="{% static 'simulation/console.css' %}">
+</head>
+<body>
+    <a class="skip-link" href="#main-content">Skip to content</a>
+    <header class="topbar">
+        <div class="brand">
+            <a href="{% url 'company:home' %}" class="brand-link">DjangoERP</a>
+            <span class="brand-sub">Simulation console</span>
+        </div>
+        <div class="clock" id="clock" aria-live="polite"></div>
+        <div class="session" id="session"></div>
+    </header>
+    <nav class="tabs" id="tabs" aria-label="Console sections" hidden>
+        <button type="button" data-tab="cockpit" aria-current="page">Cockpit</button>
+        <button type="button" data-tab="financials">Financials</button>
+        <button type="button" data-tab="operations">Operations</button>
+        <button type="button" data-tab="agents">Agents</button>
+        <button type="button" data-tab="controls">Controls</button>
+        <button type="button" data-tab="whatif">What-if lab</button>
+        <button type="button" data-tab="design">System map</button>
+    </nav>
+    <div class="runbar" id="runbar" hidden></div>
+    <main id="main-content" tabindex="-1">
+        <noscript><p class="notice">The console is a JavaScript client of the <a href="{% url 'schema-swagger-ui' %}#/simulation">/api/simulation/</a> API; everything it shows is also available there and through <code>python manage.py simulate</code>.</p></noscript>
+        <div id="view"></div>
+    </main>
+    <div class="drawer" id="drawer" hidden role="dialog" aria-modal="true" aria-labelledby="drawer-title">
+        <div class="drawer-panel">
+            <div class="drawer-head"><h2 id="drawer-title"></h2><button type="button" class="btn ghost" id="drawer-close" aria-label="Close">Close</button></div>
+            <div id="drawer-body"></div>
+        </div>
+    </div>
+    <div class="tooltip" id="tooltip" role="status" hidden></div>
+    <footer class="footer">
+        <p>Every number here is compiled from posted journal lines; agents act only through the ERP's services. <a href="{% url 'schema-swagger-ui' %}#/simulation">API</a> · <a href="{% url 'company:health' %}">Health</a> · {% include 'includes/fleet-feedback.html' %}</p>
+    </footer>
+    <script src="{% static 'simulation/console.js' %}" defer></script>
+</body>
+</html>

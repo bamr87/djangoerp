@@ -165,6 +165,38 @@ Paths are relative to the host (`http://localhost:8000` in development). Every `
 | GET PUT PATCH DELETE | `/api/company/companies/{pk}/` | `CompanyViewSet.retrieve/update/partial_update/destroy` | `IsAuthenticated`, `IsAccountantOrReadOnly` | — |
 | GET | `/api/company/` | `APIRootView` | `IsAuthenticated` | Provided by `rest_framework`. |
 
+## `/api/simulation/`
+
+| Method | Path | View | Access | Summary |
+| --- | --- | --- | --- | --- |
+| GET POST | `/api/simulation/scenarios/` | `ScenarioViewSet.list/create` | `IsAuthenticated`, `IsAccountantOrReadOnly` | API endpoint for the agent simulation sandbox's scenario (one per database) |
+| GET PUT PATCH DELETE | `/api/simulation/scenarios/{pk}/` | `ScenarioViewSet.retrieve/update/partial_update/destroy` | `IsAuthenticated`, `IsAccountantOrReadOnly` | — |
+| POST | `/api/simulation/scenarios/{pk}/advance/` | `ScenarioViewSet.advance` | `IsAuthenticated`, `IsAccountantOrReadOnly` | Run the economy forward: body {"ticks": 1..120}. Each tick is one transaction; returns the KPI snapshots compiled after each tick. |
+| GET | `/api/simulation/scenarios/{pk}/dashboard/` | `ScenarioViewSet.dashboard` | `IsAuthenticated`, `IsAccountantOrReadOnly` | Everything the console's cockpit shows: KPIs, series, lines, agents, decisions, stock, jobs. |
+| GET | `/api/simulation/scenarios/{pk}/design/` | `ScenarioViewSet.design` | `IsAuthenticated`, `IsAccountantOrReadOnly` | The system map: agent roles, parameter catalogue, posting matrix, invariants and flows, live. |
+| GET | `/api/simulation/scenarios/{pk}/financials/` | `ScenarioViewSet.financials` | `IsAuthenticated`, `IsAccountantOrReadOnly` | Trial balance, balance sheet and income statements from the report generators, cost drivers, unit economics and reconciliations. Query: as_of, from (YYYY-MM-DD). |
+| GET | `/api/simulation/scenarios/{pk}/ledger/` | `ScenarioViewSet.ledger` | `IsAuthenticated`, `IsAccountantOrReadOnly` | General ledger for one account: ?account=<code>&from=&to=. |
+| POST | `/api/simulation/scenarios/{pk}/resume/` | `ScenarioViewSet.resume` | `IsAuthenticated`, `IsAccountantOrReadOnly` | Clear a guardrail halt so the scenario can advance again (the halted tick was rolled back). |
+| GET | `/api/simulation/scenarios/{pk}/trace/` | `ScenarioViewSet.trace` | `IsAuthenticated`, `IsAccountantOrReadOnly` | Agent decisions and journal entries behind a document reference: ?reference=SO-00012. |
+| GET POST | `/api/simulation/lines/` | `ProductionLineViewSet.list/create` | `IsAuthenticated`, `IsAccountantOrReadOnly` | API endpoint for production lines |
+| GET PUT PATCH DELETE | `/api/simulation/lines/{pk}/` | `ProductionLineViewSet.retrieve/update/partial_update/destroy` | `IsAuthenticated`, `IsAccountantOrReadOnly` | — |
+| POST | `/api/simulation/lines/{pk}/retire/` | `ProductionLineViewSet.retire` | `IsAuthenticated`, `IsAccountantOrReadOnly` | Retire the line: queued jobs move to a sister line, the asset is disposed of at book value. |
+| GET | `/api/simulation/agents/` | `AgentViewSet.list` | `IsAuthenticated`, `IsAccountantOrReadOnly` | API endpoint for simulation agents (the roster is created with the scenario) |
+| GET PUT PATCH | `/api/simulation/agents/{pk}/` | `AgentViewSet.retrieve/update/partial_update` | `IsAuthenticated`, `IsAccountantOrReadOnly` | — |
+| GET | `/api/simulation/decisions/` | `AgentDecisionViewSet.list` | `IsAuthenticated`, `IsAccountantOrReadOnly` | API endpoint for agent decisions (read-only): what each agent saw, chose and why, which brain decided, what it cost, and the documents it produced |
+| GET | `/api/simulation/decisions/{pk}/` | `AgentDecisionViewSet.retrieve` | `IsAuthenticated`, `IsAccountantOrReadOnly` | — |
+| GET | `/api/simulation/snapshots/` | `TickSnapshotViewSet.list` | `IsAuthenticated`, `IsAccountantOrReadOnly` | API endpoint for per-tick KPI snapshots compiled from the ledger (read-only) |
+| GET | `/api/simulation/snapshots/{pk}/` | `TickSnapshotViewSet.retrieve` | `IsAuthenticated`, `IsAccountantOrReadOnly` | — |
+| GET POST | `/api/simulation/experiments/` | `ExperimentViewSet.list/create` | `IsAuthenticated`, `IsAccountantOrReadOnly` | API endpoint for what-if experiments |
+| GET PUT PATCH DELETE | `/api/simulation/experiments/{pk}/` | `ExperimentViewSet.retrieve/update/partial_update/destroy` | `IsAuthenticated`, `IsAccountantOrReadOnly` | — |
+| GET | `/api/simulation/` | `APIRootView` | `IsAuthenticated` | Provided by `rest_framework`. |
+
+## `/console/`
+
+| Method | Path | View | Access | Summary |
+| --- | --- | --- | --- | --- |
+| ANY | `/console/` | `simulation.views.console` | public | The simulation console: a single page that signs in with a JWT and drives the /api/simulation/ API. |
+
 ## Site root (`company/urls_web.py`)
 
 | Method | Path | View | Access | Summary |

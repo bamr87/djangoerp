@@ -36,6 +36,12 @@ python manage.py demo_erp
 More, as needed:
 
 ```bash
+python manage.py simulate --ticks 30       # the agent sandbox: bootstrap if needed, run 30 ticks, fail if the books break
+python manage.py simulate --what-if add_line:A --horizon 30   # a rolled-back what-if; the live books are untouched
+```
+
+
+```bash
 isort .                                    # configured in pyproject.toml (line_length=120, first-party apps)
 black <files you touched>                  # installed but unconfigured: never reformat whole files
 python3 tools/gen_api_routes.py --write    # regenerate docs/reference/api-routes.md (--check to verify)
@@ -71,6 +77,7 @@ Docker gotchas (details in [docs/DOCKER.md](docs/DOCKER.md)):
 | `inventory/` | `Warehouse`, `StockMove` (append-only stock ledger), `StockLevel` (cached on-hand + moving-average cost) |
 | `purchasing/`, `sales/`, `manufacturing/` | Document flows: receipts post Dr Inventory / Cr payable; shipments post Dr COGS / Cr Inventory; work-order completion backflushes at rolled-up cost |
 | `mrp/` | `MRPRun`/`PlannedOrder`, `engine.py` (the planner, a Celery task), `services.convert_run` (planned orders → draft POs/WOs) |
+| `simulation/` | The agent sandbox ([README](simulation/README.md)): `engine.py` (one transaction per tick, agents call services only), `brains.py` (heuristic or Claude, clamped, with fallback), `experiments.py` (rolled-back what-ifs), `finance.py` (guardrails and reconciliations), the `simulate` command and the `/console/` client |
 | `docs/` | [`ARCHITECTURE.md`](docs/ARCHITECTURE.md) (module map, invariants, posting matrix, MRP algorithm, adopted patterns), [`DOCKER.md`](docs/DOCKER.md), the generated [`reference/`](docs/reference/) and the [index](docs/README.md) |
 | `tools/` | `gen_api_routes.py`; `docs_index.py` and `unwrap-prose.py` are vendored from the hub — do not edit |
 | `public/`, `templates/includes/` | The feedback widget `company/templates/company/base.html` mounts, vendored from the hub — do not edit (`fleet-feedback-head.html` is ours) |
@@ -82,7 +89,7 @@ Each app owns `models.py`, `migrations/`, `tests.py` and usually `serializers.py
 
 - **Backlog of record:** GitHub Issues with the fleet labels. Pick up issues labelled `agent:ready`; never touch `agent:hold` or `human-review`.
 - **Definition of Done:** the fleet default pull request template (inherited; none here) plus the done-criteria above.
-- **Decisions:** ADRs in `docs/adr/NNNN-slug.md`, indexed in `docs/adr/README.md` — none recorded yet; the first one creates the directory. Add one for anything hard to reverse.
+- **Decisions:** ADRs in `docs/adr/NNNN-slug.md`, indexed in `docs/adr/README.md` (0002 absorption costing, 0003 the agent sandbox). Add one for anything hard to reverse.
 - **Commits:** Conventional Commits (`feat fix docs style refactor test chore perf ci build`). The PR title is the squash subject.
 - **Branches:** `feature/`, `fix/`, `docs/`, `refactor/`, `test/` or `chore/` off `main`; open a PR.
 - **Changelog:** `CHANGELOG.md` (Keep a Changelog) records notable changes.
@@ -130,6 +137,7 @@ Hard-won in `amrs-project`; never regress them (`amrs-django`'s `reports/generat
 - **Reports and MRP are async.** `SavedReport` starts `generating`; `generate_report.delay()` dispatches on `template.report_type`, writes `result_data` and ends `completed` or `failed` (`error_message`). A new report type is a `ReportTemplate.REPORT_TYPES` choice plus a branch and generator in `report_generators.py`. `mrp.engine.run_mrp` does the same for `MRPRun` (results in `log`). Dev's `CELERY_TASK_ALWAYS_EAGER=True` runs both without a worker.
 - **Audit logging is wired through services.** `core.audit.log_event` writes `accounts.AuditLog` rows (`action='update'`, event name in `details['event']`) for every document transition. There is no generic model-change middleware: master-data CRUD is not audited, only document flows. New transitions must call `log_event`.
 - **The demo is executable documentation.** `demo_erp` runs plan → buy → make → ship → bill → collect through the real services and fails if the books don't balance; `core/tests.py::EndToEndERPFlowTests` pins the same flow with exact numbers. If a change breaks either, the change is wrong (or the docs are).
+- **The simulation sandbox only posts through services, only on a sandbox.** `simulation` agents never write ledger models directly; every action is a service call under the agent's own user, the controller checks the books after every tick (an unbalanced tick rolls back and halts), and every write path calls `simulation.world.require_sandbox()` (`SIMULATION_SANDBOX`, off in prod). New agent behavior goes through the same services, and a new Claude-reviewed knob is a bounded field in a `brains` spec, never free text the engine executes.
 - **EDGAR is not ported yet.** The `edgar_statement`/`edgar_reconciliation` report types and EDGAR account-scoping helpers were stripped with `amrs-project`'s `edgar` app; restore them together with that app, not piecemeal.
 
 ## Fleet context
