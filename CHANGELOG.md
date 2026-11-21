@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.4.0](https://github.com/bamr87/djangoerp/compare/v0.3.0...v0.4.0) (2026-11-21)
+
+
+### Added
+
+* **manufacturing:** absorb conversion costs into finished goods at completion ([2dd5d33](https://github.com/bamr87/djangoerp/commit/2dd5d33139e1d8cf78b0a01cedb68525a0f7abea))
+* **simulation,workspace:** agent simulation sandbox and one app shell for every module ([60641f9](https://github.com/bamr87/djangoerp/commit/60641f92e6562179d6af09b7d66a5637957cca88))
+* **simulation:** agent simulation sandbox with a live console and what-ifs ([9de5b25](https://github.com/bamr87/djangoerp/commit/9de5b25b785fd6e33a5dca70f92479fa8b603684))
+* **workspace:** one app shell for every module, with document flow and accounting ([407aa0a](https://github.com/bamr87/djangoerp/commit/407aa0a4be7d341067b29612534e00490531a250))
+
+
+### Fixed
+
+* **sales,purchasing:** mark orders shipped or received when the API completes them ([51f0d5d](https://github.com/bamr87/djangoerp/commit/51f0d5d4361d7d117b272f3309bafa599913ca1b))
+
 ## [0.3.0](https://github.com/bamr87/djangoerp/compare/v0.2.0...v0.3.0) (2026-11-18)
 
 
