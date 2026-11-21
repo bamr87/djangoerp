@@ -1,0 +1,48 @@
+# =============================================================================
+# verify/scenarios/workspace-shell.yml — a USER SCENARIO (scenario/v1)
+# =============================================================================
+# The workspace at /app/ as a visitor meets it on a fresh database: one shell
+# for every module, whose deep links (a sales order's document flow here) all
+# serve the same page and land on the shared sign-in until there is a session.
+# Signing in needs an account with a role, which verify/verify.yml does not seed
+# (agent.never: no real credentials); the signed-in modules, document flow,
+# accounting and stock views are captured separately in test/evidence/workspace/.
+# =============================================================================
+id: workspace-shell
+feature: DJERP-016
+title: "Workspace shell serves every module route and offers the shared sign-in"
+description: "A visitor opens /app/ and a deep link into a document: both answer 200 with the same shell, which offers a labelled sign-in usable from the keyboard, keeps the module navigation, global search and page hidden until sign-in, makes the skip link the first Tab stop, reports a refused sign-in in the form, and does not overflow sideways at either width."
+viewports: [desktop, mobile]
+steps:
+  - goto: /app/
+  - expect: { status: 200 }
+  - expect: { visible: "body[data-page='app']" }
+  - wait: { selector: "#erp-login input[name='username']" }
+  - expect: { title: "Sign in · DjangoERP" }
+  - expect: { visible: "#erp-login h1:has-text('Sign in to DjangoERP')" }
+  - expect: { visible: "label:has-text('Username') input[name='username']" }
+  - expect: { visible: "label:has-text('Password') input[type='password']" }
+  - expect: { visible: "button[type='submit']:has-text('Sign in')" }
+  - expect: { hidden: "nav#erp-nav" }
+  - expect: { hidden: "form#erp-search" }
+  - expect: { hidden: "#erp-page" }
+  - expect: { count: { selector: "fleet-feedback[repo='bamr87/djangoerp']", min: 1, max: 1 } }
+  - expect: { no_horizontal_scroll: true }
+  - expect: { no_console_errors: true }
+  - screenshot: sign-in
+  - press: Tab
+  - expect: { visible: "a.skip-link[href='#main-content']:focus" }
+  # A deep link is the same shell: the router runs after sign-in, the server only serves the page.
+  - goto: /app/sales/orders/1/?tab=flow
+  - expect: { status: 200 }
+  - wait: { selector: "#erp-login input[name='username']" }
+  - expect: { visible: "#erp-login h1:has-text('Sign in to DjangoERP')" }
+  - expect: { url: "/app/sales/orders/1/?tab=flow" }
+  - expect: { no_console_errors: true }
+  # A wrong password answers in the form, not with a page error.
+  - fill: { selector: "input[name='username']", value: "nobody" }
+  - fill: { selector: "input[name='password']", value: "not-a-password" }
+  - press: Enter
+  - wait: { selector: "#erp-login p.error[role='alert']:not(:empty)" }
+  - expect: { text: "No active account found" }
+  - screenshot: sign-in-refused

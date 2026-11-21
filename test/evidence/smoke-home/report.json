@@ -5,7 +5,7 @@
     "DJERP-010"
   ],
   "path": "verify/scenarios/smoke-home.yml",
-  "started": "2026-11-16T02:08:37.779Z",
+  "started": "2026-11-21T02:31:41.656Z",
   "viewports": [
     {
       "name": "desktop",
@@ -17,7 +17,7 @@
           "step": "goto",
           "arg": "/",
           "ok": true,
-          "ms": 568
+          "ms": 582
         },
         {
           "step": "expect",
@@ -33,7 +33,7 @@
             "title": "Get started · DjangoERP"
           },
           "ok": true,
-          "ms": 16
+          "ms": 5
         },
         {
           "step": "expect",
@@ -41,7 +41,7 @@
             "visible": "main#main-content h1"
           },
           "ok": true,
-          "ms": 21
+          "ms": 23
         },
         {
           "step": "expect",
@@ -52,7 +52,7 @@
             }
           },
           "ok": true,
-          "value": 3,
+          "value": 5,
           "ms": 2
         },
         {
@@ -74,7 +74,7 @@
             "visible": "fleet-feedback button.fab"
           },
           "ok": true,
-          "ms": 1
+          "ms": 4
         },
         {
           "step": "expect",
@@ -101,13 +101,13 @@
           "arg": "home",
           "ok": true,
           "file": "test/evidence/smoke-home/desktop-home.png",
-          "ms": 48
+          "ms": 51
         },
         {
           "step": "press",
           "arg": "Tab",
           "ok": true,
-          "ms": 14
+          "ms": 3
         },
         {
           "step": "expect",
@@ -115,7 +115,7 @@
             "visible": "a.skip-link[href='#main-content']:focus"
           },
           "ok": true,
-          "ms": 2
+          "ms": 4
         },
         {
           "step": "eval",
@@ -125,20 +125,20 @@
           },
           "ok": true,
           "value": 12,
-          "ms": 0
+          "ms": 1
         },
         {
           "step": "screenshot",
           "arg": "skip-link",
           "ok": true,
           "file": "test/evidence/smoke-home/desktop-skip-link.png",
-          "ms": 28
+          "ms": 43
         },
         {
           "step": "click",
           "arg": "fleet-feedback button.fab",
           "ok": true,
-          "ms": 83
+          "ms": 33
         },
         {
           "step": "expect",
@@ -146,7 +146,7 @@
             "visible": "fleet-feedback dialog[open]"
           },
           "ok": true,
-          "ms": 2
+          "ms": 3
         },
         {
           "step": "wait",
@@ -154,20 +154,20 @@
             "ms": 500
           },
           "ok": true,
-          "ms": 504
+          "ms": 501
         },
         {
           "step": "screenshot",
           "arg": "feedback-dialog",
           "ok": true,
           "file": "test/evidence/smoke-home/desktop-feedback-dialog.png",
-          "ms": 32
+          "ms": 53
         },
         {
           "step": "press",
           "arg": "Escape",
           "ok": true,
-          "ms": 3
+          "ms": 4
         },
         {
           "step": "expect",
@@ -175,7 +175,7 @@
             "hidden": "fleet-feedback dialog[open]"
           },
           "ok": true,
-          "ms": 1
+          "ms": 2
         }
       ],
       "console_errors": [],
@@ -187,7 +187,7 @@
       "evals": {
         "skip_link_top_px_when_focused": 12
       },
-      "final_url": "http://127.0.0.1:8765/"
+      "final_url": "http://127.0.0.1:8766/"
     },
     {
       "name": "mobile",
@@ -199,7 +199,7 @@
           "step": "goto",
           "arg": "/",
           "ok": true,
-          "ms": 536
+          "ms": 582
         },
         {
           "step": "expect",
@@ -215,7 +215,7 @@
             "title": "Get started · DjangoERP"
           },
           "ok": true,
-          "ms": 2
+          "ms": 5
         },
         {
           "step": "expect",
@@ -223,7 +223,7 @@
             "visible": "main#main-content h1"
           },
           "ok": true,
-          "ms": 9
+          "ms": 23
         },
         {
           "step": "expect",
@@ -234,8 +234,8 @@
             }
           },
           "ok": true,
-          "value": 3,
-          "ms": 1
+          "value": 5,
+          "ms": 3
         },
         {
           "step": "expect",
@@ -248,7 +248,7 @@
           },
           "ok": true,
           "value": 1,
-          "ms": 0
+          "ms": 1
         },
         {
           "step": "expect",
@@ -256,7 +256,7 @@
             "visible": "fleet-feedback button.fab"
           },
           "ok": true,
-          "ms": 1
+          "ms": 3
         },
         {
           "step": "expect",
@@ -268,7 +268,7 @@
             "sw": 390,
             "cw": 390
           },
-          "ms": 1
+          "ms": 2
         },
         {
           "step": "expect",
@@ -283,13 +283,13 @@
           "arg": "home",
           "ok": true,
           "file": "test/evidence/smoke-home/mobile-home.png",
-          "ms": 41
+          "ms": 23
         },
         {
           "step": "press",
           "arg": "Tab",
           "ok": true,
-          "ms": 1
+          "ms": 2
         },
         {
           "step": "expect",
@@ -297,7 +297,7 @@
             "visible": "a.skip-link[href='#main-content']:focus"
           },
           "ok": true,
-          "ms": 2
+          "ms": 3
         },
         {
           "step": "eval",
@@ -307,20 +307,20 @@
           },
           "ok": true,
           "value": 12,
-          "ms": 0
+          "ms": 1
         },
         {
           "step": "screenshot",
           "arg": "skip-link",
           "ok": true,
           "file": "test/evidence/smoke-home/mobile-skip-link.png",
-          "ms": 15
+          "ms": 36
         },
         {
           "step": "click",
           "arg": "fleet-feedback button.fab",
           "ok": true,
-          "ms": 30
+          "ms": 49
         },
         {
           "step": "expect",
@@ -328,7 +328,7 @@
             "visible": "fleet-feedback dialog[open]"
           },
           "ok": true,
-          "ms": 1
+          "ms": 5
         },
         {
           "step": "wait",
@@ -343,13 +343,13 @@
           "arg": "feedback-dialog",
           "ok": true,
           "file": "test/evidence/smoke-home/mobile-feedback-dialog.png",
-          "ms": 17
+          "ms": 30
         },
         {
           "step": "press",
           "arg": "Escape",
           "ok": true,
-          "ms": 1
+          "ms": 3
         },
         {
           "step": "expect",
@@ -357,7 +357,7 @@
             "hidden": "fleet-feedback dialog[open]"
           },
           "ok": true,
-          "ms": 1
+          "ms": 3
         }
       ],
       "console_errors": [],
@@ -369,10 +369,10 @@
       "evals": {
         "skip_link_top_px_when_focused": 12
       },
-      "final_url": "http://127.0.0.1:8765/"
+      "final_url": "http://127.0.0.1:8766/"
     }
   ],
   "ok": true,
-  "finished": "2026-11-16T02:08:40.485Z",
-  "base": "http://127.0.0.1:8765"
+  "finished": "2026-11-21T02:31:44.312Z",
+  "base": "http://127.0.0.1:8766"
 }

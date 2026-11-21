@@ -46,7 +46,7 @@ class PurchaseOrderViewSet(ProtectedHistoryDestroyMixin, viewsets.ModelViewSet):
             'grn_number': result['grn_number'],
             'journal_entry': result['journal_entry'].entry_number,
             'moves': [move.reference for move in result['moves']],
-            'order': self.get_serializer(result['order']).data,
+            'order': self.get_serializer(self.get_object()).data,
         })
 
     @action(detail=True, methods=['post'])

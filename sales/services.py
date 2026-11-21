@@ -1,6 +1,7 @@
 from decimal import Decimal
 
 from django.db import transaction
+from django.db.models import F
 from django.utils import timezone
 from rest_framework import serializers
 
@@ -109,8 +110,10 @@ def ship_sales_order(order, user=None, shipments=None, ship_date=None):
             source_reference=f'shipment:{shipment_number}',
         )
 
-        order.status = 'shipped' if all(line.open_quantity <= 0 for line in order.lines.all()) \
-            else 'partially_shipped'
+        # Ask the database, not order.lines.all(): a caller (the API viewset) may have prefetched the lines
+        # before this shipment, and that cache still shows them open.
+        fully_shipped = not order.lines.filter(shipped_quantity__lt=F('quantity')).exists()
+        order.status = 'shipped' if fully_shipped else 'partially_shipped'
         order.save(update_fields=['status', 'updated_at'])
         log_event(user, 'sales_order.ship', order, {
             'shipment': shipment_number,

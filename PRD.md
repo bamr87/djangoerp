@@ -49,6 +49,7 @@ Feature [DJERP-009](features/features.yml) traces to requirement MR1.
 - Async financial reports via Celery
 - Swagger/ReDoc API docs
 - Docker / docker-compose with PostgreSQL
+- An agent simulation sandbox: AI and heuristic agents drive the ERP through its services over simulated time, a browser console exposes the books, operations, agent decisions and controls, and what-if experiments compare variants without touching the live books
 
 ## Feature catalog
 
@@ -67,6 +68,14 @@ Every user-facing capability has a stable id in the feature catalog [`features/f
 | [DJERP-008](features/features.yml) | Fiscal periods, lock dates and period-close entry | planned | [`journal/models.py`](journal/models.py) · [docs](https://github.com/bamr87/djangoerp/issues/45) | FR4 |
 | [DJERP-009](features/features.yml) | Constitution missions | planned | [`docs/constitution.md`](docs/constitution.md) · [`PRD.md`](PRD.md) | MR1 |
 | [DJERP-010](features/features.yml) | Landing page with setup steps, API map and feedback widget | shipped | route `/` · [`README.md`](README.md) | TBD |
+| [DJERP-011](features/features.yml) | Agent simulation sandbox | shipped | [`simulation/engine.py`](simulation/engine.py) · [`simulation/README.md`](simulation/README.md) | FR5, FR6 |
+| [DJERP-012](features/features.yml) | Claude-driven agents with bounded decisions | shipped | [`simulation/brains.py`](simulation/brains.py) · [`docs/adr/0003-agent-simulation-sandbox.md`](docs/adr/0003-agent-simulation-sandbox.md) | FR7 |
+| [DJERP-013](features/features.yml) | Simulation console | shipped | route `/console/` · [`simulation/README.md`](simulation/README.md) | FR8 |
+| [DJERP-014](features/features.yml) | What-if experiments | shipped | [`simulation/experiments.py`](simulation/experiments.py) · [`simulation/README.md`](simulation/README.md) | FR9 |
+| [DJERP-015](features/features.yml) | Labor and overhead absorption in work-order completion | shipped | [`manufacturing/services.py`](manufacturing/services.py) · [`docs/adr/0002-absorb-conversion-costs-into-finished-goods.md`](docs/adr/0002-absorb-conversion-costs-into-finished-goods.md) | FR10 |
+| [DJERP-016](features/features.yml) | Workspace app shell | shipped | route `/app/` · [`workspace/README.md`](workspace/README.md) | FR11 |
+| [DJERP-017](features/features.yml) | Document flow, accounting and stock impact | shipped | [`workspace/services.py`](workspace/services.py) · [`workspace/README.md`](workspace/README.md) | FR12 |
+| [DJERP-018](features/features.yml) | Global search, work queues and statements in the shell | shipped | route `/app/finance/statements/` · [`workspace/README.md`](workspace/README.md) | FR13 |
 
 **Requirement → feature trace**
 
@@ -76,6 +85,15 @@ Every user-facing capability has a stable id in the feature catalog [`features/f
 | FR3 | DJERP-007 |
 | FR4 | DJERP-008 |
 | MR1 | DJERP-009 |
+| FR5 | DJERP-011 |
+| FR6 | DJERP-011 |
+| FR7 | DJERP-012 |
+| FR8 | DJERP-013 |
+| FR9 | DJERP-014 |
+| FR10 | DJERP-015 |
+| FR11 | DJERP-016 |
+| FR12 | DJERP-017 |
+| FR13 | DJERP-018 |
 <!-- features:end -->
 
 ## 5. Requirements
@@ -86,6 +104,15 @@ Every user-facing capability has a stable id in the feature catalog [`features/f
 - FR2: API authenticated via JWT
 - FR3: Posted journal entries can be corrected by a reversing entry that is idempotent, linked to the original and audit-logged (shipped — `POST /api/journal/entries/{id}/reverse/`, [#44](https://github.com/bamr87/djangoerp/issues/44), DJERP-007)
 - FR4: Fiscal periods and a lock date block postings into closed periods, and period close posts P&L to retained earnings (planned — [#45](https://github.com/bamr87/djangoerp/issues/45), DJERP-008)
+- FR5: A sandbox simulation advances a time-stepped economy whose agents — market, customers, suppliers, managers, line crews, machines, maintenance and the controller — act only through the ERP's services, and only on a database flagged as a sandbox (DJERP-011)
+- FR6: Every simulated tick leaves the trial balance and balance sheet balanced and the stock, receivables, payables and fixed-asset subledgers reconciled with the GL; a tick that unbalances the books is rolled back and halts the scenario (DJERP-011)
+- FR7: Agents can be driven by a small Claude model whose decisions are bounded, clamped and audited, with a heuristic fallback when the model is unavailable or answers invalidly, and every call's cost posted to the ledger (DJERP-012)
+- FR8: A browser console shows the live financial statements, operations, agent decisions with document-to-journal tracing and the system design, and exposes every simulation parameter as a control (DJERP-013)
+- FR9: What-if experiments compare a baseline and a variant, such as adding a production line, from the current state on common random numbers without changing the live books (DJERP-014)
+- FR10: Work-order completion can absorb labor and overhead into finished-goods value while the stock ledger and the GL stay equal (DJERP-015)
+- FR11: One app shell gives every module a consistent navigation, sign-in, global search, list, record and form pattern, built only on the public API, with what each role sees and can do derived from the API's own permission classes (DJERP-016)
+- FR12: Any business document shows its lifecycle, its lines, the documents before and after it in its flow, the journal entries it posted and the stock moves it made, and its audit trail, each section limited to what the role may read (DJERP-017)
+- FR13: A user can find any document, partner or product from one search, see the work waiting on them as queues, and read the financial statements from the report generators inside the shell (DJERP-018)
 
 **Non-functional**
 

@@ -1,0 +1,47 @@
+/* The simulation console's own rules. Everything shared (tokens, buttons, cards, tiles, pills, tables, charts,
+   tooltips, meters, the decision feed, the drawer) comes from the workspace design system, workspace/css/app.css,
+   which the shell template loads first. */
+
+/* --- page head: title and the simulation clock --------------------------------------------------------------- */
+.sim-head { align-items: center; }
+.clock { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.clock .tick { font-weight: 600; }
+
+/* --- console sections and the run bar ----------------------------------------------------------------------- */
+.tabs { display: flex; gap: 2px; border-bottom: 1px solid var(--rule); overflow-x: auto; scrollbar-width: thin; }
+.tabs button {
+    border: 0; background: none; padding: 9px 12px; cursor: pointer; color: var(--text-secondary);
+    border-bottom: 2px solid transparent; white-space: nowrap;
+}
+.tabs button:hover { color: var(--text-primary); }
+.tabs button[aria-current="page"] { color: var(--text-primary); border-bottom-color: var(--accent); font-weight: 600; }
+/* The run bar sticks under the shell's sticky header and spans main's padding edge to edge. */
+.runbar {
+    display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin: 0 -24px 16px; padding: 10px 24px;
+    border-bottom: 1px solid var(--rule); background: var(--bg); position: sticky; top: var(--header-h); z-index: 20;
+}
+.runbar .spacer { flex: 1; }
+
+/* --- lines, parameters and the system map ------------------------------------------------------------------- */
+.line-card .row { display: flex; justify-content: space-between; gap: 8px; font-size: 13px; padding: 2px 0; }
+.param { display: grid; grid-template-columns: minmax(0, 1fr) 140px; gap: 6px 12px; padding: 10px 0; border-bottom: 1px solid var(--grid); }
+.param .desc { grid-column: 1 / -1; color: var(--text-muted); font-size: 12px; }
+.param.dirty { background: linear-gradient(90deg, var(--surface-2), transparent); }
+.param .map-inputs { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 6px; }
+.flowmap { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 10px; align-items: stretch; }
+.flowmap .node { border: 1px solid var(--rule); border-radius: 8px; padding: 10px; background: var(--surface-2); }
+.flowmap .node h3 { margin-bottom: 4px; color: var(--text-primary); }
+.flowmap .arrow { display: none; }
+.sim-create { max-width: 640px; margin: 24px auto; }
+
+@media (max-width: 1100px) {
+    .flowmap { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 900px) {
+    /* The header scrolls away on narrow screens, and main's padding narrows to 16px. */
+    .runbar { top: 0; margin: 0 -16px 14px; padding: 10px 16px; }
+}
+@media (max-width: 720px) {
+    .param { grid-template-columns: minmax(0, 1fr); }
+    .flowmap { grid-template-columns: minmax(0, 1fr); }
+}

@@ -46,6 +46,10 @@ INSTALLED_APPS = [
     'sales',
     'manufacturing',
     'mrp',
+    # Local — agent simulation sandbox and console
+    'simulation',
+    # Local — the workspace: the common app shell over every module's API
+    'workspace',
 ]
 
 MIDDLEWARE = [
@@ -90,6 +94,7 @@ TEMPLATES = [
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
                 'company.context_processors.fleet',
+                'workspace.context_processors.navigation',
             ],
         },
     },
@@ -177,6 +182,14 @@ CELERY_RESULT_SERIALIZER = 'json'
 CELERY_TIMEZONE = TIME_ZONE
 CELERY_TASK_ALWAYS_EAGER = env.bool('CELERY_TASK_ALWAYS_EAGER', default=False)
 CELERY_TASK_EAGER_PROPAGATES = env.bool('CELERY_TASK_EAGER_PROPAGATES', default=False)
+
+# Agent simulation sandbox (simulation/). Agents post real documents and journal entries, so they only run on a
+# database flagged as a sandbox; prod leaves this off, dev turns it on (settings/dev.py).
+SIMULATION_SANDBOX = env.bool('SIMULATION_SANDBOX', default=False)
+# The small model the "llm" driver gives each reviewing agent; needs ANTHROPIC_API_KEY (or an `ant auth login`
+# profile). Without credentials every review falls back to the heuristic policy and says so.
+SIMULATION_AGENT_MODEL = env('SIMULATION_AGENT_MODEL', default='claude-haiku-5-5')
+SIMULATION_LLM_TIMEOUT = env.float('SIMULATION_LLM_TIMEOUT', default=30.0)
 
 # CORS
 CORS_ALLOWED_ORIGINS = env.list(

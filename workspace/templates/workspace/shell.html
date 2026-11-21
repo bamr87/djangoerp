@@ -1,0 +1,60 @@
+{% load static %}<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    {% include 'includes/fleet-feedback-head.html' %}
+    <title>{% block title %}{{ page_title|default:'Workspace' }} · DjangoERP{% endblock %}</title>
+    <meta name="description" content="{% block description %}The DjangoERP workspace: every module — finance, sales, purchasing, inventory, manufacturing, planning, master data and the simulation sandbox — in one shell, over the same JWT API anyone can use.{% endblock %}">
+    <meta name="theme-color" content="#f7f5f0" media="(prefers-color-scheme: light)">
+    <meta name="theme-color" content="#1b1815" media="(prefers-color-scheme: dark)">
+    <link rel="icon" href="{% static 'company/favicon.svg' %}" type="image/svg+xml">
+    <link rel="stylesheet" href="{% static 'workspace/css/app.css' %}">
+    {% block head %}{% endblock %}
+</head>
+<body class="erp" data-page="{% block page_kind %}app{% endblock %}">
+    <a class="skip-link" href="#main-content">Skip to content</a>
+    <header class="erp-header">
+        <button type="button" class="nav-toggle" id="nav-toggle" aria-controls="erp-nav" aria-expanded="false" hidden>
+            <span aria-hidden="true">☰</span> Menu
+        </button>
+        <a class="erp-brand" href="/app/">DjangoERP</a>
+        <form class="erp-search" id="erp-search" role="search" hidden>
+            <label class="visually-hidden" for="erp-search-input">Search the ERP</label>
+            <input type="search" id="erp-search-input" autocomplete="off" placeholder="Search documents, partners, products…  ( / )"
+                   role="combobox" aria-expanded="false" aria-controls="erp-search-results" aria-autocomplete="list">
+            <div class="erp-search-results" id="erp-search-results" role="listbox" aria-label="Search results" hidden></div>
+        </form>
+        <div class="erp-user" id="erp-user"></div>
+    </header>
+    <div class="erp-body">
+        <nav class="erp-nav" id="erp-nav" aria-label="Modules" hidden>
+            <a class="nav-home" href="/app/" data-key="home">Home</a>
+            {% for group in nav_groups %}
+            <section class="nav-group" data-group="{{ group.key }}">
+                <h2>{{ group.label }}</h2>
+                <ul>
+                    {% for item in group.items %}
+                    <li><a href="{{ item.route }}" data-key="{{ item.key }}" data-read="{{ item.read|join:',' }}"{% if item.external %} data-external{% endif %}>{{ item.label }}</a></li>
+                    {% endfor %}
+                </ul>
+            </section>
+            {% endfor %}
+            <p class="nav-foot"><a href="/swagger/" data-external>API docs</a> · <a href="/admin/" data-external>Admin</a> · <a href="/" data-external>About</a></p>
+        </nav>
+        <main id="main-content" tabindex="-1">
+            <nav class="crumbs" id="erp-crumbs" aria-label="Breadcrumb"></nav>
+            <div id="erp-login" hidden></div>
+            <div class="erp-page" id="erp-page">
+                {% block main %}{% endblock %}
+            </div>
+        </main>
+    </div>
+    <footer class="erp-footer">
+        <p>DjangoERP · every screen is a client of the <a href="/swagger/">REST API</a>; every number comes from posted ledger lines · {% include 'includes/fleet-feedback.html' %}</p>
+    </footer>
+    <div class="erp-toast" id="erp-toast" role="status" aria-live="polite"></div>
+    <script type="module" src="{% static 'workspace/js/shell.js' %}"></script>
+    {% block scripts %}{% endblock %}
+</body>
+</html>

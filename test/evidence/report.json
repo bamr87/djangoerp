@@ -1,13 +1,28 @@
 {
   "schema": "verify-report/v1",
-  "base": "http://127.0.0.1:8765",
-  "generated": "2026-11-16T02:08:40.499Z",
+  "base": "http://127.0.0.1:8766",
+  "generated": "2026-11-21T02:36:19.289Z",
   "by": "agent",
   "run": null,
-  "total": 1,
-  "passed": 1,
+  "total": 3,
+  "passed": 3,
   "failed": 0,
   "scenarios": [
+    {
+      "id": "simulation-console",
+      "title": "Simulation console loads inside the shell and offers the shared sign-in",
+      "features": [
+        "DJERP-013"
+      ],
+      "ok": true,
+      "dir": "test/evidence/simulation-console",
+      "screenshots": [
+        "test/evidence/simulation-console/desktop-sign-in.png",
+        "test/evidence/simulation-console/desktop-sign-in-refused.png",
+        "test/evidence/simulation-console/mobile-sign-in.png",
+        "test/evidence/simulation-console/mobile-sign-in-refused.png"
+      ]
+    },
     {
       "id": "smoke-home",
       "title": "Landing page renders and is usable",
@@ -23,6 +38,21 @@
         "test/evidence/smoke-home/mobile-home.png",
         "test/evidence/smoke-home/mobile-skip-link.png",
         "test/evidence/smoke-home/mobile-feedback-dialog.png"
+      ]
+    },
+    {
+      "id": "workspace-shell",
+      "title": "Workspace shell serves every module route and offers the shared sign-in",
+      "features": [
+        "DJERP-016"
+      ],
+      "ok": true,
+      "dir": "test/evidence/workspace-shell",
+      "screenshots": [
+        "test/evidence/workspace-shell/desktop-sign-in.png",
+        "test/evidence/workspace-shell/desktop-sign-in-refused.png",
+        "test/evidence/workspace-shell/mobile-sign-in.png",
+        "test/evidence/workspace-shell/mobile-sign-in-refused.png"
       ]
     }
   ]

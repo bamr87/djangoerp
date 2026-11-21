@@ -1,0 +1,438 @@
+{
+  "id": "simulation-console",
+  "title": "Simulation console loads inside the shell and offers the shared sign-in",
+  "features": [
+    "DJERP-013"
+  ],
+  "path": "verify/scenarios/simulation-console.yml",
+  "started": "2026-11-21T02:36:13.774Z",
+  "viewports": [
+    {
+      "name": "desktop",
+      "width": 1280,
+      "height": 800,
+      "ok": true,
+      "steps": [
+        {
+          "step": "goto",
+          "arg": "/console/",
+          "ok": true,
+          "ms": 619
+        },
+        {
+          "step": "expect",
+          "arg": {
+            "status": 200
+          },
+          "ok": true,
+          "ms": 0
+        },
+        {
+          "step": "expect",
+          "arg": {
+            "visible": "body[data-page='console']"
+          },
+          "ok": true,
+          "ms": 29
+        },
+        {
+          "step": "wait",
+          "arg": {
+            "selector": "form input[name='username']"
+          },
+          "ok": true,
+          "ms": 4
+        },
+        {
+          "step": "expect",
+          "arg": {
+            "title": "Sign in · DjangoERP"
+          },
+          "ok": true,
+          "ms": 1
+        },
+        {
+          "step": "expect",
+          "arg": {
+            "visible": "#erp-login h1:has-text('Sign in to DjangoERP')"
+          },
+          "ok": true,
+          "ms": 5
+        },
+        {
+          "step": "expect",
+          "arg": {
+            "visible": "label:has-text('Username') input[name='username']"
+          },
+          "ok": true,
+          "ms": 3
+        },
+        {
+          "step": "expect",
+          "arg": {
+            "visible": "label:has-text('Password') input[type='password']"
+          },
+          "ok": true,
+          "ms": 3
+        },
+        {
+          "step": "expect",
+          "arg": {
+            "visible": "button[type='submit']:has-text('Sign in')"
+          },
+          "ok": true,
+          "ms": 3
+        },
+        {
+          "step": "expect",
+          "arg": {
+            "hidden": "nav#tabs"
+          },
+          "ok": true,
+          "ms": 2
+        },
+        {
+          "step": "expect",
+          "arg": {
+            "hidden": "nav#erp-nav"
+          },
+          "ok": true,
+          "ms": 3
+        },
+        {
+          "step": "expect",
+          "arg": {
+            "hidden": "form#erp-search"
+          },
+          "ok": true,
+          "ms": 3
+        },
+        {
+          "step": "expect",
+          "arg": {
+            "count": {
+              "selector": "fleet-feedback[repo='bamr87/djangoerp']",
+              "min": 1,
+              "max": 1
+            }
+          },
+          "ok": true,
+          "value": 1,
+          "ms": 3
+        },
+        {
+          "step": "expect",
+          "arg": {
+            "no_horizontal_scroll": true
+          },
+          "ok": true,
+          "value": {
+            "sw": 1280,
+            "cw": 1280
+          },
+          "ms": 4
+        },
+        {
+          "step": "expect",
+          "arg": {
+            "no_console_errors": true
+          },
+          "ok": true,
+          "ms": 0
+        },
+        {
+          "step": "screenshot",
+          "arg": "sign-in",
+          "ok": true,
+          "file": "test/evidence/simulation-console/desktop-sign-in.png",
+          "ms": 40
+        },
+        {
+          "step": "press",
+          "arg": "Tab",
+          "ok": true,
+          "ms": 3
+        },
+        {
+          "step": "expect",
+          "arg": {
+            "visible": "a.skip-link[href='#main-content']:focus"
+          },
+          "ok": true,
+          "ms": 3
+        },
+        {
+          "step": "fill",
+          "arg": {
+            "selector": "input[name='username']",
+            "value": "nobody"
+          },
+          "ok": true,
+          "ms": 8
+        },
+        {
+          "step": "fill",
+          "arg": {
+            "selector": "input[name='password']",
+            "value": "not-a-password"
+          },
+          "ok": true,
+          "ms": 6
+        },
+        {
+          "step": "press",
+          "arg": "Enter",
+          "ok": true,
+          "ms": 4
+        },
+        {
+          "step": "wait",
+          "arg": {
+            "selector": "p.error[role='alert']:not(:empty)"
+          },
+          "ok": true,
+          "ms": 283
+        },
+        {
+          "step": "expect",
+          "arg": {
+            "text": "No active account found"
+          },
+          "ok": true,
+          "ms": 1
+        },
+        {
+          "step": "screenshot",
+          "arg": "sign-in-refused",
+          "ok": true,
+          "file": "test/evidence/simulation-console/desktop-sign-in-refused.png",
+          "ms": 43
+        }
+      ],
+      "console_errors": [
+        "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
+      ],
+      "screenshots": [
+        "test/evidence/simulation-console/desktop-sign-in.png",
+        "test/evidence/simulation-console/desktop-sign-in-refused.png"
+      ],
+      "evals": {},
+      "final_url": "http://127.0.0.1:8766/console/"
+    },
+    {
+      "name": "mobile",
+      "width": 390,
+      "height": 844,
+      "ok": true,
+      "steps": [
+        {
+          "step": "goto",
+          "arg": "/console/",
+          "ok": true,
+          "ms": 636
+        },
+        {
+          "step": "expect",
+          "arg": {
+            "status": 200
+          },
+          "ok": true,
+          "ms": 0
+        },
+        {
+          "step": "expect",
+          "arg": {
+            "visible": "body[data-page='console']"
+          },
+          "ok": true,
+          "ms": 27
+        },
+        {
+          "step": "wait",
+          "arg": {
+            "selector": "form input[name='username']"
+          },
+          "ok": true,
+          "ms": 4
+        },
+        {
+          "step": "expect",
+          "arg": {
+            "title": "Sign in · DjangoERP"
+          },
+          "ok": true,
+          "ms": 2
+        },
+        {
+          "step": "expect",
+          "arg": {
+            "visible": "#erp-login h1:has-text('Sign in to DjangoERP')"
+          },
+          "ok": true,
+          "ms": 4
+        },
+        {
+          "step": "expect",
+          "arg": {
+            "visible": "label:has-text('Username') input[name='username']"
+          },
+          "ok": true,
+          "ms": 3
+        },
+        {
+          "step": "expect",
+          "arg": {
+            "visible": "label:has-text('Password') input[type='password']"
+          },
+          "ok": true,
+          "ms": 3
+        },
+        {
+          "step": "expect",
+          "arg": {
+            "visible": "button[type='submit']:has-text('Sign in')"
+          },
+          "ok": true,
+          "ms": 2
+        },
+        {
+          "step": "expect",
+          "arg": {
+            "hidden": "nav#tabs"
+          },
+          "ok": true,
+          "ms": 3
+        },
+        {
+          "step": "expect",
+          "arg": {
+            "hidden": "nav#erp-nav"
+          },
+          "ok": true,
+          "ms": 2
+        },
+        {
+          "step": "expect",
+          "arg": {
+            "hidden": "form#erp-search"
+          },
+          "ok": true,
+          "ms": 3
+        },
+        {
+          "step": "expect",
+          "arg": {
+            "count": {
+              "selector": "fleet-feedback[repo='bamr87/djangoerp']",
+              "min": 1,
+              "max": 1
+            }
+          },
+          "ok": true,
+          "value": 1,
+          "ms": 2
+        },
+        {
+          "step": "expect",
+          "arg": {
+            "no_horizontal_scroll": true
+          },
+          "ok": true,
+          "value": {
+            "sw": 390,
+            "cw": 390
+          },
+          "ms": 3
+        },
+        {
+          "step": "expect",
+          "arg": {
+            "no_console_errors": true
+          },
+          "ok": true,
+          "ms": 0
+        },
+        {
+          "step": "screenshot",
+          "arg": "sign-in",
+          "ok": true,
+          "file": "test/evidence/simulation-console/mobile-sign-in.png",
+          "ms": 21
+        },
+        {
+          "step": "press",
+          "arg": "Tab",
+          "ok": true,
+          "ms": 2
+        },
+        {
+          "step": "expect",
+          "arg": {
+            "visible": "a.skip-link[href='#main-content']:focus"
+          },
+          "ok": true,
+          "ms": 3
+        },
+        {
+          "step": "fill",
+          "arg": {
+            "selector": "input[name='username']",
+            "value": "nobody"
+          },
+          "ok": true,
+          "ms": 8
+        },
+        {
+          "step": "fill",
+          "arg": {
+            "selector": "input[name='password']",
+            "value": "not-a-password"
+          },
+          "ok": true,
+          "ms": 5
+        },
+        {
+          "step": "press",
+          "arg": "Enter",
+          "ok": true,
+          "ms": 8
+        },
+        {
+          "step": "wait",
+          "arg": {
+            "selector": "p.error[role='alert']:not(:empty)"
+          },
+          "ok": true,
+          "ms": 283
+        },
+        {
+          "step": "expect",
+          "arg": {
+            "text": "No active account found"
+          },
+          "ok": true,
+          "ms": 2
+        },
+        {
+          "step": "screenshot",
+          "arg": "sign-in-refused",
+          "ok": true,
+          "file": "test/evidence/simulation-console/mobile-sign-in-refused.png",
+          "ms": 21
+        }
+      ],
+      "console_errors": [
+        "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
+      ],
+      "screenshots": [
+        "test/evidence/simulation-console/mobile-sign-in.png",
+        "test/evidence/simulation-console/mobile-sign-in-refused.png"
+      ],
+      "evals": {},
+      "final_url": "http://127.0.0.1:8766/console/"
+    }
+  ],
+  "ok": true,
+  "finished": "2026-11-21T02:36:15.974Z",
+  "base": "http://127.0.0.1:8766"
+}

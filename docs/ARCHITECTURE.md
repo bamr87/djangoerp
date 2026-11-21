@@ -10,6 +10,8 @@ Modules depend downward only (Tryton's decomposition discipline): master data kn
 
 ```mermaid
 flowchart TD
+    simulation -. services only .-> mrp & sales & purchasing & manufacturing & invoices & journal
+    workspace -. public API + read models .-> mrp & sales & purchasing & manufacturing & invoices & journal & inventory
     mrp --> sales & purchasing & manufacturing
     manufacturing --> inventory & products
     purchasing --> partners & products & inventory
@@ -39,6 +41,8 @@ flowchart TD
 | `sales` | `SalesOrder`/`SalesOrderLine`, shipment and invoicing flow | `partners`, `products`, `inventory`, `invoices`, `journal` |
 | `manufacturing` | `BillOfMaterials`/`BOMLine`, `WorkOrder`, completion flow | `products`, `inventory`, `journal` |
 | `mrp` | `MRPRun`, `PlannedOrder`, the planning engine and plan-to-order conversion | everything above |
+| `simulation` | The agent sandbox: `Scenario`, `ProductionLine`, `Agent`, `AgentDecision`, `ProductionJob`, `SupplierPayable`, `TickSnapshot`, `Experiment`; the tick engine, agent brains, what-ifs and the `/console/` client | everything above, through services only |
+| `workspace` | No models. The `/app/` shell and its registry (introspected from every viewset and serializer, with a per-role access matrix from the permission classes), and read-only document-flow, search, overview and statement read models under `/api/workspace/` | every app's viewsets and models, read-only; writes go through the other apps' API |
 
 ## The invariants
 
@@ -97,7 +101,7 @@ Account resolution is explicit configuration, never guessed: product categories 
 | Business event | Debit | Credit | Source |
 | --- | --- | --- | --- |
 | Goods receipt (GRN) | Inventory (per product category), at PO price | Supplier payable (accrual) | `purchasing.services.receive_purchase_order` |
-| Work order completion | Inventory of finished good, at rolled-up component value | Inventory of components, at moving average | `manufacturing.services.complete_work_order` |
+| Work order completion | Inventory of finished good, at rolled-up component value plus any absorbed conversion cost | Inventory of components, at moving average; each absorption account for its `conversion_costs` share | `manufacturing.services.complete_work_order` |
 | Shipment | COGS (per category), at moving average | Inventory (per category) | `sales.services.ship_sales_order` |
 | Customer invoice posted | Partner receivable | Revenue (per line product category, or invoice fallback account) | `invoices.services.post_invoice` |
 | Customer payment posted | Deposit (cash/bank) account | Partner receivable | `invoices.services.post_payment` |
@@ -166,6 +170,24 @@ Per the consolidation research (source-verified against each project), these pat
 
 Library survey (all MIT/BSD/Apache, safe here): `django-sequences` (numbering), `django-fsm-2` (transition sugar), `django-simple-history` / `django-auditlog` (row history). The core keeps zero new runtime dependencies — the audit requirement is met by wiring the existing `accounts.AuditLog` through `core.audit.log_event` from every service transition, and transitions are enforced by plain guarded functions.
 
+## The agent simulation sandbox
+
+`simulation` drives the whole ERP with agents over simulated time ([ADR 0003](adr/0003-agent-simulation-sandbox.md), [simulation/README.md](../simulation/README.md)). Each tick runs the agents in business-day order — market, supplier prices, maintenance, customers, sales manager, buyer (safety stock, MRP at the simulated date, conversion of due planned orders, priced purchase orders), supplier deliveries, planner (finite-capacity jobs on production lines), line crews and machines, shipping and billing, plant manager, controller — and every write is a call to the services above, made as the agent's own user and wrapped in a savepoint so a refused action is recorded instead of failing the tick. The tick is one transaction: the controller compiles the trial balance and balance sheet and reconciles the stock, receivables, payables and fixed-asset subledgers with the GL, and an unbalanced tick rolls back and halts the scenario. It only runs where `SIMULATION_SANDBOX` is on.
+
+Agents revise their policies at a cadence through a brain: a seeded heuristic, or a small Claude model whose structured-output answers are clamped to each field's bounds and fall back to the heuristic on any failure, with each call's cost posted to `6300 AI agent compute`. Conversion costs are absorbed into finished goods at a normal-capacity rate per line through `complete_work_order(conversion_costs=...)` ([ADR 0002](adr/0002-absorb-conversion-costs-into-finished-goods.md)), so idle capacity surfaces as under-absorption against `5390`. What-if experiments run a baseline and a variant from the current state on common random numbers inside transactions that always roll back.
+
+| Sandbox event | Debit | Credit | Source |
+| --- | --- | --- | --- |
+| Period costs | Direct and indirect labor, variable overhead, maintenance, management, facility, AI compute, interest | Cash | `simulation.engine` controller via `post_entry` |
+| Depreciation | Depreciation 5330 | Accumulated depreciation 1590 | controller via `post_entry` |
+| Supplier payment | Accounts payable | Cash | controller via `post_entry` (keyed `sim:<id>:pay:<GRN>`) |
+| Revolver draw / repayment | Cash / Revolver 2400 | Revolver 2400 / Cash | controller via `post_entry` |
+| Line capex / retirement | Machinery 1500 / accumulated depreciation + loss on disposal 6500 | Cash / Machinery 1500 | `simulation.world.commission_line` / `decommission_line` |
+
+## The workspace shell
+
+`workspace` is the front end for every module ([ADR 0004](adr/0004-registry-driven-workspace-shell.md), [workspace/README.md](../workspace/README.md)). It owns no data and no rules: `registry.py` describes each viewset's fields, filters, actions and endpoints by introspecting the serializers and the router, and decides which roles can read or write each resource by running the viewset's own permission classes, so the screens and the API cannot disagree about access. Lists, forms and actions call the public endpoints; transitions are the documents' `@action`s, so every posting still goes through the services above. The one thing it adds on the server is read models that cross documents: a document's flow (the chain from source to settlement, built from audit events, `source_reference` prefixes and foreign keys), its journal entries and stock moves, its audit trail, global search, the home page's work queues and the statements, each section filtered by what the requesting role could read through the owning viewset.
+
 ## Deliberate exclusions (roadmap)
 
-Each exclusion names the reference system that shows the upgrade path: routings/work centers and finite capacity (frePPLe), WIP staging warehouse and job cards (ERPNext), vendor-bill three-way match against the GRN accrual (classic GR/IR), stock reservations (Odoo `reserved_quantity`), UoM conversion rings (ERPNext `conversion_factor` idiom), product variants (all systems — their biggest accidental complexity, deliberately absent), lot/serial tracking, multi-currency, backdated valuation repost, BOM component snapshots on work orders, credit notes, and per-location bins. The EDGAR/XBRL module remains a later consolidation pass per the README roadmap.
+Labor and overhead now reach product cost through `complete_work_order(conversion_costs=...)` (ADR 0002), with the rate supplied by the caller; the sandbox supplies one per production line. Each exclusion names the reference system that shows the upgrade path: routings/work centers and finite capacity in the core (frePPLe; the sandbox's `ProductionLine` is a simulation-only stand-in), WIP staging warehouse and job cards (ERPNext), vendor-bill three-way match against the GRN accrual (classic GR/IR), stock reservations (Odoo `reserved_quantity`), UoM conversion rings (ERPNext `conversion_factor` idiom), product variants (all systems — their biggest accidental complexity, deliberately absent), lot/serial tracking, multi-currency, backdated valuation repost, BOM component snapshots on work orders, credit notes, and per-location bins. The EDGAR/XBRL module remains a later consolidation pass per the README roadmap.

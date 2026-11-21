@@ -10,6 +10,7 @@ from inventory.models import StockLevel
 from journal.services import post_entry
 
 QTY_PLACES = Decimal('0.001')
+VALUE_PLACES = Decimal('0.01')
 
 
 def component_requirements(work_order):
@@ -43,15 +44,45 @@ def start_work_order(work_order, user=None):
     return work_order
 
 
-def complete_work_order(work_order, user=None, completion_date=None):
+def clean_conversion_costs(conversion_costs):
+    """
+    Validate and merge the conversion costs a work-order completion absorbs.
+
+    ``conversion_costs`` is an iterable of ``{'account': Account, 'amount': Decimal}``
+    dicts (an optional ``label`` is kept for the audit trail). Amounts are quantized
+    to the cent and must not be negative; zero amounts are dropped. Returns
+    ``(by_account, total)``: the credit per absorption account and their sum.
+    """
+    by_account = {}
+    for cost in conversion_costs or ():
+        account = cost.get('account')
+        if account is None:
+            raise serializers.ValidationError('Every conversion cost needs the account it is absorbed from')
+        amount = Decimal(cost.get('amount') or 0).quantize(VALUE_PLACES)
+        if amount < 0:
+            raise serializers.ValidationError('Conversion costs cannot be negative')
+        if amount:
+            by_account[account] = by_account.get(account, Decimal('0.00')) + amount
+    return by_account, sum(by_account.values(), Decimal('0.00'))
+
+
+def complete_work_order(work_order, user=None, completion_date=None, conversion_costs=None):
     """
     Complete the whole order in one transaction:
 
     - issue every BOM component from the warehouse at moving-average cost;
     - receive the finished good, valued at exactly the total component value
-      consumed (rolled-up actual cost — no labor/overhead in the core, see
-      roadmap), which re-weights the finished good's moving average;
-    - post Dr finished-good inventory / Cr component inventory for that value.
+      consumed plus any absorbed conversion costs, which re-weights the
+      finished good's moving average;
+    - post Dr finished-good inventory for that value / Cr component inventory
+      for the components / Cr each absorption account for its conversion cost.
+
+    ``conversion_costs`` (optional, see ``clean_conversion_costs``) is absorption
+    costing: the labor and overhead a production line spent on the order move
+    into inventory value, credited to the accounts that absorb them (normally a
+    contra-expense such as "production costs absorbed", so actual costs posted
+    elsewhere net to the under/over-absorbed variance). Without it the receipt is
+    valued at component cost alone, as before.
 
     Availability is pre-checked across all components so a partially consumed
     order can never be left behind by a mid-flight shortage.
@@ -61,6 +92,7 @@ def complete_work_order(work_order, user=None, completion_date=None):
             f'Only confirmed or in-progress work orders can complete (order is {work_order.status})'
         )
     completion_date = completion_date or timezone.now().date()
+    conversion_by_account, conversion_total = clean_conversion_costs(conversion_costs)
     requirements = component_requirements(work_order)
     if not requirements:
         raise serializers.ValidationError('Work order BOM has no lines')
@@ -112,17 +144,22 @@ def complete_work_order(work_order, user=None, completion_date=None):
             source_reference=work_order.number,
             created_by=user,
         )
-        receipt = inventory_services.complete_move(receipt, user=user, total_value=total_value)
+        receipt = inventory_services.complete_move(
+            receipt, user=user, total_value=total_value + conversion_total,
+        )
 
         journal_entry = post_entry(
             date=completion_date,
             description=f'Production {work_order.number}: {work_order.quantity} x {product.sku}',
             lines=[
-                {'account': product.category.inventory_account, 'debit': total_value,
+                {'account': product.category.inventory_account, 'debit': receipt.total_value,
                  'reference': work_order.number},
             ] + [
                 {'account': account, 'credit': amount, 'reference': work_order.number}
                 for account, amount in credit_by_account.items()
+            ] + [
+                {'account': account, 'credit': amount, 'reference': work_order.number}
+                for account, amount in conversion_by_account.items()
             ],
             created_by=user,
             source_reference=f'wo:{work_order.number}:complete',
@@ -134,6 +171,7 @@ def complete_work_order(work_order, user=None, completion_date=None):
         log_event(user, 'work_order.complete', work_order, {
             'journal_entry': journal_entry.entry_number,
             'consumed_value': str(total_value),
+            'conversion_value': str(conversion_total),
             'moves': [move.reference for move in issue_moves + [receipt]],
         })
         return {

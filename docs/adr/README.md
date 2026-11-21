@@ -15,3 +15,6 @@ This directory records decisions for djangoerp that are hard to reverse: the sta
 | ID | Title | Status |
 | --- | --- | --- |
 | 0001 | [Record architecture decisions](0001-record-architecture-decisions.md) | accepted |
+| 0002 | [Absorb conversion costs into finished goods at work-order completion](0002-absorb-conversion-costs-into-finished-goods.md) | proposed |
+| 0003 | [An agent simulation sandbox that drives the ERP through its services](0003-agent-simulation-sandbox.md) | proposed |
+| 0004 | [One registry-driven workspace shell for every module](0004-registry-driven-workspace-shell.md) | proposed |
