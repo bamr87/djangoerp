@@ -78,6 +78,7 @@ Docker gotchas (details in [docs/DOCKER.md](docs/DOCKER.md)):
 | `purchasing/`, `sales/`, `manufacturing/` | Document flows: receipts post Dr Inventory / Cr payable; shipments post Dr COGS / Cr Inventory; work-order completion backflushes at rolled-up cost |
 | `mrp/` | `MRPRun`/`PlannedOrder`, `engine.py` (the planner, a Celery task), `services.convert_run` (planned orders → draft POs/WOs) |
 | `simulation/` | The agent sandbox ([README](simulation/README.md)): `engine.py` (one transaction per tick, agents call services only), `brains.py` (heuristic or Claude, clamped, with fallback), `experiments.py` (rolled-back what-ifs), `finance.py` (guardrails and reconciliations), the `simulate` command and the `/console/` client |
+| `workspace/` | The `/app/` shell every module shares ([README](workspace/README.md), ADR 0004): `registry.py` (layout plus introspection of every viewset and serializer, and the per-role access matrix from the permission classes; a new viewset fails `workspace/tests.py` until it has an entry), `services.py` (read-only document flow, search, overview, statements, each section gated by the owning viewset's permissions), `shell.html` (which the console extends) and the no-build ES modules in `static/workspace/js/` |
 | `docs/` | [`ARCHITECTURE.md`](docs/ARCHITECTURE.md) (module map, invariants, posting matrix, MRP algorithm, adopted patterns), [`DOCKER.md`](docs/DOCKER.md), the generated [`reference/`](docs/reference/) and the [index](docs/README.md) |
 | `tools/` | `gen_api_routes.py`; `docs_index.py` and `unwrap-prose.py` are vendored from the hub — do not edit |
 | `public/`, `templates/includes/` | The feedback widget `company/templates/company/base.html` mounts, vendored from the hub — do not edit (`fleet-feedback-head.html` is ours) |
@@ -89,7 +90,7 @@ Each app owns `models.py`, `migrations/`, `tests.py` and usually `serializers.py
 
 - **Backlog of record:** GitHub Issues with the fleet labels. Pick up issues labelled `agent:ready`; never touch `agent:hold` or `human-review`.
 - **Definition of Done:** the fleet default pull request template (inherited; none here) plus the done-criteria above.
-- **Decisions:** ADRs in `docs/adr/NNNN-slug.md`, indexed in `docs/adr/README.md` (0002 absorption costing, 0003 the agent sandbox). Add one for anything hard to reverse.
+- **Decisions:** ADRs in `docs/adr/NNNN-slug.md`, indexed in `docs/adr/README.md` (0002 absorption costing, 0003 the agent sandbox, 0004 the workspace shell). Add one for anything hard to reverse.
 - **Commits:** Conventional Commits (`feat fix docs style refactor test chore perf ci build`). The PR title is the squash subject.
 - **Branches:** `feature/`, `fix/`, `docs/`, `refactor/`, `test/` or `chore/` off `main`; open a PR.
 - **Changelog:** `CHANGELOG.md` (Keep a Changelog) records notable changes.

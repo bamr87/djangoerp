@@ -8,5 +8,5 @@ line_length = 120
 known_first_party = [
     "accounts", "coa", "journal", "invoices", "reports", "core", "djangoerp",
     "partners", "products", "inventory", "purchasing", "sales", "manufacturing", "mrp",
-    "simulation",
+    "simulation", "workspace",
 ]

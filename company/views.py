@@ -54,6 +54,7 @@ API_AREAS = (
     ('MRP', 'mrp'),
     ('Company', 'company'),
     ('Simulation sandbox (agents, what-ifs)', 'simulation'),
+    ('Workspace (registry, document flow, search)', 'workspace'),
 )
 
 

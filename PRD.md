@@ -73,6 +73,9 @@ Every user-facing capability has a stable id in the feature catalog [`features/f
 | [DJERP-013](features/features.yml) | Simulation console | shipped | route `/console/` · [`simulation/README.md`](simulation/README.md) | FR8 |
 | [DJERP-014](features/features.yml) | What-if experiments | shipped | [`simulation/experiments.py`](simulation/experiments.py) · [`simulation/README.md`](simulation/README.md) | FR9 |
 | [DJERP-015](features/features.yml) | Labor and overhead absorption in work-order completion | shipped | [`manufacturing/services.py`](manufacturing/services.py) · [`docs/adr/0002-absorb-conversion-costs-into-finished-goods.md`](docs/adr/0002-absorb-conversion-costs-into-finished-goods.md) | FR10 |
+| [DJERP-016](features/features.yml) | Workspace app shell | shipped | route `/app/` · [`workspace/README.md`](workspace/README.md) | FR11 |
+| [DJERP-017](features/features.yml) | Document flow, accounting and stock impact | shipped | [`workspace/services.py`](workspace/services.py) · [`workspace/README.md`](workspace/README.md) | FR12 |
+| [DJERP-018](features/features.yml) | Global search, work queues and statements in the shell | shipped | route `/app/finance/statements/` · [`workspace/README.md`](workspace/README.md) | FR13 |
 
 **Requirement → feature trace**
 
@@ -88,6 +91,9 @@ Every user-facing capability has a stable id in the feature catalog [`features/f
 | FR8 | DJERP-013 |
 | FR9 | DJERP-014 |
 | FR10 | DJERP-015 |
+| FR11 | DJERP-016 |
+| FR12 | DJERP-017 |
+| FR13 | DJERP-018 |
 <!-- features:end -->
 
 ## 5. Requirements
@@ -104,6 +110,9 @@ Every user-facing capability has a stable id in the feature catalog [`features/f
 - FR8: A browser console shows the live financial statements, operations, agent decisions with document-to-journal tracing and the system design, and exposes every simulation parameter as a control (DJERP-013)
 - FR9: What-if experiments compare a baseline and a variant, such as adding a production line, from the current state on common random numbers without changing the live books (DJERP-014)
 - FR10: Work-order completion can absorb labor and overhead into finished-goods value while the stock ledger and the GL stay equal (DJERP-015)
+- FR11: One app shell gives every module a consistent navigation, sign-in, global search, list, record and form pattern, built only on the public API, with what each role sees and can do derived from the API's own permission classes (DJERP-016)
+- FR12: Any business document shows its lifecycle, its lines, the documents before and after it in its flow, the journal entries it posted and the stock moves it made, and its audit trail, each section limited to what the role may read (DJERP-017)
+- FR13: A user can find any document, partner or product from one search, see the work waiting on them as queues, and read the financial statements from the report generators inside the shell (DJERP-018)
 
 **Non-functional**
 

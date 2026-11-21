@@ -507,6 +507,10 @@ class SimulationAPITests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertContains(response, 'simulation/console.js')
         self.assertContains(response, 'id="main-content"')
+        # It is a page of the common shell: the shared sign-in, module navigation and search come with it.
+        self.assertContains(response, 'workspace/js/shell.js')
+        self.assertContains(response, 'data-page="console"')
+        self.assertContains(response, 'aria-label="Modules"')
 
 
 class SimulateCommandTests(TestCase):

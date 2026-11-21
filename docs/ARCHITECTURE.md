@@ -11,6 +11,7 @@ Modules depend downward only (Tryton's decomposition discipline): master data kn
 ```mermaid
 flowchart TD
     simulation -. services only .-> mrp & sales & purchasing & manufacturing & invoices & journal
+    workspace -. public API + read models .-> mrp & sales & purchasing & manufacturing & invoices & journal & inventory
     mrp --> sales & purchasing & manufacturing
     manufacturing --> inventory & products
     purchasing --> partners & products & inventory
@@ -41,6 +42,7 @@ flowchart TD
 | `manufacturing` | `BillOfMaterials`/`BOMLine`, `WorkOrder`, completion flow | `products`, `inventory`, `journal` |
 | `mrp` | `MRPRun`, `PlannedOrder`, the planning engine and plan-to-order conversion | everything above |
 | `simulation` | The agent sandbox: `Scenario`, `ProductionLine`, `Agent`, `AgentDecision`, `ProductionJob`, `SupplierPayable`, `TickSnapshot`, `Experiment`; the tick engine, agent brains, what-ifs and the `/console/` client | everything above, through services only |
+| `workspace` | No models. The `/app/` shell and its registry (introspected from every viewset and serializer, with a per-role access matrix from the permission classes), and read-only document-flow, search, overview and statement read models under `/api/workspace/` | every app's viewsets and models, read-only; writes go through the other apps' API |
 
 ## The invariants
 
@@ -181,6 +183,10 @@ Agents revise their policies at a cadence through a brain: a seeded heuristic, o
 | Supplier payment | Accounts payable | Cash | controller via `post_entry` (keyed `sim:<id>:pay:<GRN>`) |
 | Revolver draw / repayment | Cash / Revolver 2400 | Revolver 2400 / Cash | controller via `post_entry` |
 | Line capex / retirement | Machinery 1500 / accumulated depreciation + loss on disposal 6500 | Cash / Machinery 1500 | `simulation.world.commission_line` / `decommission_line` |
+
+## The workspace shell
+
+`workspace` is the front end for every module ([ADR 0004](adr/0004-registry-driven-workspace-shell.md), [workspace/README.md](../workspace/README.md)). It owns no data and no rules: `registry.py` describes each viewset's fields, filters, actions and endpoints by introspecting the serializers and the router, and decides which roles can read or write each resource by running the viewset's own permission classes, so the screens and the API cannot disagree about access. Lists, forms and actions call the public endpoints; transitions are the documents' `@action`s, so every posting still goes through the services above. The one thing it adds on the server is read models that cross documents: a document's flow (the chain from source to settlement, built from audit events, `source_reference` prefixes and foreign keys), its journal entries and stock moves, its audit trail, global search, the home page's work queues and the statements, each section filtered by what the requesting role could read through the owning viewset.
 
 ## Deliberate exclusions (roadmap)
 

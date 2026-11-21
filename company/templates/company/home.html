@@ -8,7 +8,7 @@
             {% if company.founded_on %}· founded {{ company.founded_on }}{% endif %}
         </p>
         {% if company.legal_name %}<p>Registered as <em>{{ company.legal_name }}</em>.</p>{% endif %}
-        <p>Run <code>python manage.py demo_erp</code> to exercise the whole loop end to end.</p>
+        <p><a href="{% url 'workspace:shell' %}">Open the workspace</a> to work in every module, or run <code>python manage.py demo_erp</code> to exercise the whole loop end to end.</p>
     {% else %}
         <h1>Get started</h1>
         <p>No company on file yet. To set this installation up:</p>

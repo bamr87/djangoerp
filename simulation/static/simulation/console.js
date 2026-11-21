@@ -1,8 +1,9 @@
 /*
- * DjangoERP simulation console: a dependency-free client of /api/simulation/.
- * Signs in with the project's JWT endpoint, then renders the sandbox's cockpit,
- * statements, operations, agents, controls, what-if lab and system map. Every
- * string from the server is inserted with textContent.
+ * DjangoERP simulation console: a dependency-free client of /api/simulation/, rendered inside the common
+ * workspace shell. The shell (workspace/static/workspace/js/shell.js) owns sign-in, the session and the module
+ * navigation; this script waits for its `erp:ready` event and calls the API through window.ERPShell. It renders
+ * the sandbox's cockpit, statements, operations, agents, controls, what-if lab and system map. Every string from
+ * the server is inserted with textContent.
  */
 (() => {
   'use strict';
@@ -11,9 +12,6 @@
   const SERIES = ['var(--series-1)', 'var(--series-2)', 'var(--series-3)', 'var(--series-4)'];
   const WRITE_ROLES = ['accountant', 'admin'];
   const store = {
-    access: sessionStorage.getItem('sim.access'),
-    refresh: sessionStorage.getItem('sim.refresh'),
-    user: JSON.parse(sessionStorage.getItem('sim.user') || 'null'),
     scenario: null, dash: null, design: null, fin: null, finPeriod: 'start',
     tab: (location.hash || '#cockpit').slice(1), playing: false, speed: 1500, busy: false,
     decisionFilter: {role: '', kind: '', driver: '', search: ''}, decisionPage: null, decisions: [],
@@ -80,43 +78,12 @@
   const mean = (arr) => { const xs = arr.filter(isNum); return xs.length ? sum(xs) / xs.length : null; };
   const rolling = (arr, n, fn = mean) => arr.map((_, i) => fn(arr.slice(Math.max(0, i - n + 1), i + 1)));
   const cumulative = (arr) => { let t = 0; return arr.map((v) => (t += isNum(v) ? v : 0)); };
-  const canWrite = () => store.user && WRITE_ROLES.includes(store.user.role);
+  const shell = () => window.ERPShell;
+  const canWrite = () => Boolean(shell()) && WRITE_ROLES.includes(shell().auth.role());
 
-  // --- API --------------------------------------------------------------------------------------
-  async function api(path, {method = 'GET', body, retry = true} = {}) {
-    const headers = {'Accept': 'application/json'};
-    if (body !== undefined) headers['Content-Type'] = 'application/json';
-    if (store.access) headers['Authorization'] = 'Bearer ' + store.access;
-    const url = path.startsWith('/api/') ? path : API + path;
-    const response = await fetch(url, {method, headers, body: body === undefined ? undefined : JSON.stringify(body)});
-    if (response.status === 401 && retry && store.refresh) {
-      if (await refreshToken()) return api(path, {method, body, retry: false});
-      logout('Your session expired; sign in again.');
-      throw new Error('Session expired');
-    }
-    const data = response.status === 204 ? null : await response.json().catch(() => null);
-    if (!response.ok) throw new Error(errorText(data) || `${response.status} ${response.statusText}`);
-    return data;
-  }
-  function errorText(data) {
-    if (!data) return '';
-    if (typeof data === 'string') return data;
-    if (Array.isArray(data)) return data.map(errorText).join(' ');
-    if (data.detail) return errorText(data.detail);
-    return Object.entries(data).map(([k, v]) => (k === 'non_field_errors' ? '' : k + ': ') + errorText(v)).join(' · ');
-  }
-  async function refreshToken() {
-    try {
-      const response = await fetch('/api/auth/refresh/', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({refresh: store.refresh})});
-      if (!response.ok) return false;
-      const data = await response.json();
-      store.access = data.access;
-      sessionStorage.setItem('sim.access', data.access);
-      return true;
-    } catch (err) {
-      console.warn('token refresh failed', err);
-      return false;
-    }
+  // --- API: the shell's client (JWT, one refresh on 401, sign-out when the session is gone) ------------
+  function api(path, {method = 'GET', body} = {}) {
+    return shell().api(path.startsWith('/api/') ? path : API + path, {method, body});
   }
   function say(message, tone) {
     store.message = {text: message || '', tone};  // the run bar re-renders after each refresh; keep the message
@@ -126,57 +93,10 @@
     el.className = 'secondary ' + (tone === 'error' ? 'error' : '');
   }
 
-  // --- auth -------------------------------------------------------------------------------------
-  function renderLogin(message) {
-    stop();
-    $('tabs').hidden = true;
-    $('runbar').hidden = true;
-    $('clock').replaceChildren();
-    $('session').replaceChildren();
-    const error = h('p', {class: 'error', role: 'alert', text: message || ''});
-    const form = h('form', {class: 'card', onsubmit: async (event) => {
-      event.preventDefault();
-      const data = new FormData(form);
-      error.textContent = '';
-      try {
-        const response = await fetch('/api/auth/login/', {method: 'POST', headers: {'Content-Type': 'application/json'},
-          body: JSON.stringify({username: data.get('username'), password: data.get('password')})});
-        const body = await response.json().catch(() => ({}));
-        if (!response.ok) throw new Error(errorText(body) || 'Sign-in failed');
-        store.access = body.access; store.refresh = body.refresh; store.user = body.user;
-        sessionStorage.setItem('sim.access', body.access);
-        sessionStorage.setItem('sim.refresh', body.refresh);
-        sessionStorage.setItem('sim.user', JSON.stringify(body.user));
-        boot();
-      } catch (err) {
-        error.textContent = err.message;
-      }
-    }},
-      h('h1', {text: 'Sign in to the sandbox'}),
-      h('p', {class: 'secondary', text: 'The console uses the same JWT login as the API. Reading needs any role; running the economy and changing controls needs the accountant or admin role.'}),
-      h('label', {class: 'field'}, h('span', {text: 'Username'}), h('input', {type: 'text', name: 'username', autocomplete: 'username', required: true})),
-      h('label', {class: 'field'}, h('span', {text: 'Password'}), h('input', {type: 'password', name: 'password', autocomplete: 'current-password', required: true})),
-      error,
-      h('button', {class: 'btn primary', type: 'submit', text: 'Sign in'}),
-      h('p', {class: 'muted', text: 'No account with a role yet? Run python manage.py createsuperuser and give it a role in the admin, or use the Docker stack\'s seeded admin.'}));
-    $('view').replaceChildren(h('div', {class: 'login'}, form));
-  }
-  function logout(message) {
-    for (const key of ['sim.access', 'sim.refresh', 'sim.user']) sessionStorage.removeItem(key);
-    store.access = store.refresh = store.user = null;
-    renderLogin(message);
-  }
-  function renderSession() {
-    const role = store.user && store.user.role;
-    $('session').replaceChildren(
-      h('span', {class: 'pill'}, h('span', {class: 'dot'}), `${store.user ? store.user.username : ''} · ${role || 'no role'}`),
-      h('button', {class: 'btn small', type: 'button', onclick: () => logout(), text: 'Sign out'}));
-  }
-
   // --- boot -------------------------------------------------------------------------------------
   async function boot() {
-    if (!store.access) return renderLogin();
-    renderSession();
+    shell().setCrumbs([{label: 'Home', href: '/app/'}, {label: 'Simulation'}, {label: 'Console'}]);
+    shell().setActiveNav('/console/');
     try {
       const list = await api('/scenarios/');
       const scenario = (list.results || list)[0];
@@ -208,7 +128,7 @@
         error.textContent = err.message;
       }
     }},
-      h('h1', {text: 'Start the sandbox economy'}),
+      h('h2', {text: 'Start the sandbox economy'}),
       h('p', {class: 'secondary', text: 'Creates a two-family manufacturer — product line A (widgets) and B (gadgets) — with customers, suppliers, two production lines and a roster of agents, then posts its opening capital, line capex and opening stock through the ERP\'s own services.'}),
       h('div', {class: 'grid cols-2'},
         h('label', {class: 'field'}, h('span', {text: 'Name'}), h('input', {type: 'text', name: 'name', value: 'Sandbox', required: true})),
@@ -221,7 +141,7 @@
       error,
       h('div', {}, h('button', {class: 'btn primary', type: 'submit', disabled: !canWrite(), text: 'Create scenario'})),
       canWrite() ? null : h('p', {class: 'muted', text: 'Creating a scenario needs the accountant or admin role.'}));
-    $('view').replaceChildren(h('div', {class: 'login', style: 'max-width:640px'}, form));
+    $('view').replaceChildren(h('div', {class: 'sim-create'}, form));
   }
 
   async function refresh({quiet} = {}) {
@@ -1086,5 +1006,8 @@
   }
 
   window.addEventListener('hashchange', () => { const tab = location.hash.slice(1); if (tab && tab !== store.tab) { store.tab = tab; renderTab(); } });
-  boot();
+  // The shell signs the user in, then announces it; after a sign-out and back in it announces again.
+  window.addEventListener('erp:signed-out', () => stop());
+  window.addEventListener('erp:ready', boot);
+  if (window.ERPShell && window.ERPShell.ready) boot();
 })();

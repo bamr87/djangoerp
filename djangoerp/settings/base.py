@@ -48,6 +48,8 @@ INSTALLED_APPS = [
     'mrp',
     # Local — agent simulation sandbox and console
     'simulation',
+    # Local — the workspace: the common app shell over every module's API
+    'workspace',
 ]
 
 MIDDLEWARE = [
@@ -92,6 +94,7 @@ TEMPLATES = [
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
                 'company.context_processors.fleet',
+                'workspace.context_processors.navigation',
             ],
         },
     },

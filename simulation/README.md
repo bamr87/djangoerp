@@ -24,6 +24,8 @@ Agents only act where `SIMULATION_SANDBOX` is on. `djangoerp/settings/dev.py` tu
 
 ## The console (`/console/`)
 
+The console is a page of the common workspace shell ([workspace/README.md](../workspace/README.md)): one sign-in for it and every module, the module navigation at the side, and the header's search. Any document number in the console's traces and feeds can also be opened in the workspace, whose document pages show the same journal entries and stock moves from the document's side.
+
 | Tab | What it shows |
 | --- | --- |
 | Cockpit | Net income since start, KPI tiles with 30-tick sparklines, eight trend charts (P&L flows, cash and working capital, actual vs absorbed conversion cost, units, line utilization, unit cost, prices, market indices), the guardrails, the controller's commentary and the live decision feed. Play, step 1/7/30 ticks. |

@@ -1,11 +1,11 @@
 {
   "id": "simulation-console",
-  "title": "Simulation console loads and offers sign-in",
+  "title": "Simulation console loads inside the shell and offers the shared sign-in",
   "features": [
     "DJERP-013"
   ],
   "path": "verify/scenarios/simulation-console.yml",
-  "started": "2026-11-20T23:30:11.338Z",
+  "started": "2026-11-21T02:36:13.774Z",
   "viewports": [
     {
       "name": "desktop",
@@ -17,7 +17,7 @@
           "step": "goto",
           "arg": "/console/",
           "ok": true,
-          "ms": 627
+          "ms": 619
         },
         {
           "step": "expect",
@@ -30,10 +30,10 @@
         {
           "step": "expect",
           "arg": {
-            "title": "Simulation console · DjangoERP"
+            "visible": "body[data-page='console']"
           },
           "ok": true,
-          "ms": 7
+          "ms": 29
         },
         {
           "step": "wait",
@@ -41,15 +41,23 @@
             "selector": "form input[name='username']"
           },
           "ok": true,
-          "ms": 34
+          "ms": 4
         },
         {
           "step": "expect",
           "arg": {
-            "visible": "h1:has-text('Sign in to the sandbox')"
+            "title": "Sign in · DjangoERP"
           },
           "ok": true,
-          "ms": 7
+          "ms": 1
+        },
+        {
+          "step": "expect",
+          "arg": {
+            "visible": "#erp-login h1:has-text('Sign in to DjangoERP')"
+          },
+          "ok": true,
+          "ms": 5
         },
         {
           "step": "expect",
@@ -57,7 +65,7 @@
             "visible": "label:has-text('Username') input[name='username']"
           },
           "ok": true,
-          "ms": 4
+          "ms": 3
         },
         {
           "step": "expect",
@@ -65,7 +73,7 @@
             "visible": "label:has-text('Password') input[type='password']"
           },
           "ok": true,
-          "ms": 4
+          "ms": 3
         },
         {
           "step": "expect",
@@ -73,7 +81,7 @@
             "visible": "button[type='submit']:has-text('Sign in')"
           },
           "ok": true,
-          "ms": 7
+          "ms": 3
         },
         {
           "step": "expect",
@@ -81,7 +89,23 @@
             "hidden": "nav#tabs"
           },
           "ok": true,
-          "ms": 4
+          "ms": 2
+        },
+        {
+          "step": "expect",
+          "arg": {
+            "hidden": "nav#erp-nav"
+          },
+          "ok": true,
+          "ms": 3
+        },
+        {
+          "step": "expect",
+          "arg": {
+            "hidden": "form#erp-search"
+          },
+          "ok": true,
+          "ms": 3
         },
         {
           "step": "expect",
@@ -94,7 +118,7 @@
           },
           "ok": true,
           "value": 1,
-          "ms": 2
+          "ms": 3
         },
         {
           "step": "expect",
@@ -106,7 +130,7 @@
             "sw": 1280,
             "cw": 1280
           },
-          "ms": 3
+          "ms": 4
         },
         {
           "step": "expect",
@@ -121,13 +145,13 @@
           "arg": "sign-in",
           "ok": true,
           "file": "test/evidence/simulation-console/desktop-sign-in.png",
-          "ms": 50
+          "ms": 40
         },
         {
           "step": "press",
           "arg": "Tab",
           "ok": true,
-          "ms": 4
+          "ms": 3
         },
         {
           "step": "expect",
@@ -135,7 +159,7 @@
             "visible": "a.skip-link[href='#main-content']:focus"
           },
           "ok": true,
-          "ms": 4
+          "ms": 3
         },
         {
           "step": "fill",
@@ -144,7 +168,7 @@
             "value": "nobody"
           },
           "ok": true,
-          "ms": 11
+          "ms": 8
         },
         {
           "step": "fill",
@@ -153,13 +177,13 @@
             "value": "not-a-password"
           },
           "ok": true,
-          "ms": 7
+          "ms": 6
         },
         {
           "step": "press",
           "arg": "Enter",
           "ok": true,
-          "ms": 3
+          "ms": 4
         },
         {
           "step": "wait",
@@ -167,7 +191,7 @@
             "selector": "p.error[role='alert']:not(:empty)"
           },
           "ok": true,
-          "ms": 285
+          "ms": 283
         },
         {
           "step": "expect",
@@ -175,14 +199,14 @@
             "text": "No active account found"
           },
           "ok": true,
-          "ms": 2
+          "ms": 1
         },
         {
           "step": "screenshot",
           "arg": "sign-in-refused",
           "ok": true,
           "file": "test/evidence/simulation-console/desktop-sign-in-refused.png",
-          "ms": 50
+          "ms": 43
         }
       ],
       "console_errors": [
@@ -205,7 +229,7 @@
           "step": "goto",
           "arg": "/console/",
           "ok": true,
-          "ms": 595
+          "ms": 636
         },
         {
           "step": "expect",
@@ -218,10 +242,10 @@
         {
           "step": "expect",
           "arg": {
-            "title": "Simulation console · DjangoERP"
+            "visible": "body[data-page='console']"
           },
           "ok": true,
-          "ms": 4
+          "ms": 27
         },
         {
           "step": "wait",
@@ -229,15 +253,23 @@
             "selector": "form input[name='username']"
           },
           "ok": true,
-          "ms": 21
+          "ms": 4
         },
         {
           "step": "expect",
           "arg": {
-            "visible": "h1:has-text('Sign in to the sandbox')"
+            "title": "Sign in · DjangoERP"
           },
           "ok": true,
-          "ms": 3
+          "ms": 2
+        },
+        {
+          "step": "expect",
+          "arg": {
+            "visible": "#erp-login h1:has-text('Sign in to DjangoERP')"
+          },
+          "ok": true,
+          "ms": 4
         },
         {
           "step": "expect",
@@ -261,12 +293,28 @@
             "visible": "button[type='submit']:has-text('Sign in')"
           },
           "ok": true,
-          "ms": 3
+          "ms": 2
         },
         {
           "step": "expect",
           "arg": {
             "hidden": "nav#tabs"
+          },
+          "ok": true,
+          "ms": 3
+        },
+        {
+          "step": "expect",
+          "arg": {
+            "hidden": "nav#erp-nav"
+          },
+          "ok": true,
+          "ms": 2
+        },
+        {
+          "step": "expect",
+          "arg": {
+            "hidden": "form#erp-search"
           },
           "ok": true,
           "ms": 3
@@ -282,7 +330,7 @@
           },
           "ok": true,
           "value": 1,
-          "ms": 1
+          "ms": 2
         },
         {
           "step": "expect",
@@ -294,7 +342,7 @@
             "sw": 390,
             "cw": 390
           },
-          "ms": 2
+          "ms": 3
         },
         {
           "step": "expect",
@@ -309,7 +357,7 @@
           "arg": "sign-in",
           "ok": true,
           "file": "test/evidence/simulation-console/mobile-sign-in.png",
-          "ms": 29
+          "ms": 21
         },
         {
           "step": "press",
@@ -332,7 +380,7 @@
             "value": "nobody"
           },
           "ok": true,
-          "ms": 6
+          "ms": 8
         },
         {
           "step": "fill",
@@ -347,7 +395,7 @@
           "step": "press",
           "arg": "Enter",
           "ok": true,
-          "ms": 2
+          "ms": 8
         },
         {
           "step": "wait",
@@ -355,7 +403,7 @@
             "selector": "p.error[role='alert']:not(:empty)"
           },
           "ok": true,
-          "ms": 785
+          "ms": 283
         },
         {
           "step": "expect",
@@ -363,14 +411,14 @@
             "text": "No active account found"
           },
           "ok": true,
-          "ms": 1
+          "ms": 2
         },
         {
           "step": "screenshot",
           "arg": "sign-in-refused",
           "ok": true,
           "file": "test/evidence/simulation-console/mobile-sign-in-refused.png",
-          "ms": 35
+          "ms": 21
         }
       ],
       "console_errors": [
@@ -385,6 +433,6 @@
     }
   ],
   "ok": true,
-  "finished": "2026-11-20T23:30:14.035Z",
+  "finished": "2026-11-21T02:36:15.974Z",
   "base": "http://127.0.0.1:8766"
 }

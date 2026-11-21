@@ -1,27 +1,32 @@
 # =============================================================================
 # verify/scenarios/simulation-console.yml — a USER SCENARIO (scenario/v1)
 # =============================================================================
-# The simulation console's public shell, as a visitor meets it on a fresh
-# database: the page names itself, explains it is an API client, offers the JWT
-# sign-in, and holds up at phone width. Signing in needs an account with a role,
+# The simulation console as a visitor meets it on a fresh database: a page of
+# the common workspace shell (/app/'s header, module navigation and sign-in),
+# so it offers the one JWT sign-in every module shares, keeps the module
+# navigation and the console's sections hidden until then, and holds up at
+# phone width. Signing in needs an account with a role,
 # which verify/verify.yml does not seed (agent.never: no real credentials); the
 # signed-in tabs are captured separately in test/evidence/simulation-console/.
 # =============================================================================
 id: simulation-console
 feature: DJERP-013
-title: "Simulation console loads and offers sign-in"
-description: "A visitor opens /console/: the page is titled, the sign-in form (username, password, submit) is labelled and usable from the keyboard, the console sections stay hidden until sign-in, the skip link is the first Tab stop, and nothing overflows sideways at either width."
+title: "Simulation console loads inside the shell and offers the shared sign-in"
+description: "A visitor opens /console/: it is a page of the common shell (data-page=console), the shared sign-in form (username, password, submit) is labelled and usable from the keyboard, the module navigation, global search and console sections stay hidden until sign-in, the skip link is the first Tab stop, and nothing overflows sideways at either width."
 viewports: [desktop, mobile]
 steps:
   - goto: /console/
   - expect: { status: 200 }
-  - expect: { title: "Simulation console · DjangoERP" }
+  - expect: { visible: "body[data-page='console']" }
   - wait: { selector: "form input[name='username']" }
-  - expect: { visible: "h1:has-text('Sign in to the sandbox')" }
+  - expect: { title: "Sign in · DjangoERP" }
+  - expect: { visible: "#erp-login h1:has-text('Sign in to DjangoERP')" }
   - expect: { visible: "label:has-text('Username') input[name='username']" }
   - expect: { visible: "label:has-text('Password') input[type='password']" }
   - expect: { visible: "button[type='submit']:has-text('Sign in')" }
   - expect: { hidden: "nav#tabs" }
+  - expect: { hidden: "nav#erp-nav" }
+  - expect: { hidden: "form#erp-search" }
   - expect: { count: { selector: "fleet-feedback[repo='bamr87/djangoerp']", min: 1, max: 1 } }
   - expect: { no_horizontal_scroll: true }
   - expect: { no_console_errors: true }

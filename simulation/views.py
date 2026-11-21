@@ -188,5 +188,5 @@ class ExperimentViewSet(viewsets.ModelViewSet):
 
 
 def console(request):
-    """The simulation console: a single page that signs in with a JWT and drives the /api/simulation/ API."""
+    """The simulation console: a page of the common workspace shell that drives /api/simulation/."""
     return render(request, 'simulation/console.html', {'page_title': 'Simulation console'})

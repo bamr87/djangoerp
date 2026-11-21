@@ -191,11 +191,29 @@ Paths are relative to the host (`http://localhost:8000` in development). Every `
 | GET PUT PATCH DELETE | `/api/simulation/experiments/{pk}/` | `ExperimentViewSet.retrieve/update/partial_update/destroy` | `IsAuthenticated`, `IsAccountantOrReadOnly` | — |
 | GET | `/api/simulation/` | `APIRootView` | `IsAuthenticated` | Provided by `rest_framework`. |
 
+## `/api/workspace/`
+
+| Method | Path | View | Access | Summary |
+| --- | --- | --- | --- | --- |
+| GET | `/api/workspace/flow/{resource}/{object_id}/` | `WorkspaceViewSet.flow` | `IsAuthenticated` | Document flow for one business object: related documents, the journal entries and stock moves it caused, and its audit trail — each section only where the user's role may read it. |
+| GET | `/api/workspace/overview/` | `WorkspaceViewSet.overview` | `IsAuthenticated` | Home page: work queues, record counts and recent activity, for what this user may read. |
+| GET | `/api/workspace/registry/` | `WorkspaceViewSet.registry` | `IsAuthenticated` | Every module and business object the shell shows: navigation groups, endpoints, field types, filters, lifecycles, actions and the roles that may read and write each, introspected from the live viewsets. |
+| GET | `/api/workspace/search/` | `WorkspaceViewSet.search` | `IsAuthenticated` | Global search (?search=) across every resource this user may list, using each viewset's search fields. |
+| GET | `/api/workspace/statements/` | `WorkspaceViewSet.statements` | `IsAuthenticated` | A live financial statement from reports.report_generators: ?report=trial_balance\|balance_sheet\|income_statement\|general_ledger with as_of, from, to and (for the general ledger) account. |
+| GET | `/api/workspace/` | `APIRootView` | `IsAuthenticated` | Provided by `rest_framework`. |
+
+## `/app/`
+
+| Method | Path | View | Access | Summary |
+| --- | --- | --- | --- | --- |
+| ANY | `/app/` | `workspace.views.shell` | public | The workspace single-page app: one shell, every module, deep-linkable at /app/<module>/<resource>/<id>/. |
+| ANY | `/app/{path}` | `workspace.views.shell` | public | The workspace single-page app: one shell, every module, deep-linkable at /app/<module>/<resource>/<id>/. |
+
 ## `/console/`
 
 | Method | Path | View | Access | Summary |
 | --- | --- | --- | --- | --- |
-| ANY | `/console/` | `simulation.views.console` | public | The simulation console: a single page that signs in with a JWT and drives the /api/simulation/ API. |
+| ANY | `/console/` | `simulation.views.console` | public | The simulation console: a page of the common workspace shell that drives /api/simulation/. |
 
 ## Site root (`company/urls_web.py`)
 
