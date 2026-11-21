@@ -49,7 +49,7 @@ class SalesOrderViewSet(ProtectedHistoryDestroyMixin, viewsets.ModelViewSet):
             'shipment_number': result['shipment_number'],
             'journal_entry': result['journal_entry'].entry_number,
             'moves': [move.reference for move in result['moves']],
-            'order': self.get_serializer(result['order']).data,
+            'order': self.get_serializer(self.get_object()).data,
         })
 
     @action(detail=True, methods=['post'])

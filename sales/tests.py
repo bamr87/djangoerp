@@ -57,6 +57,21 @@ class SalesOrderFlowTests(APITestCase):
         }, format='json')
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
+    def test_shipping_everything_through_the_api_marks_the_order_shipped(self):
+        # The viewset prefetches lines; the status must come from the database, not that stale cache, or a fully
+        # shipped order stays partially_shipped and can never be invoiced.
+        self.stock_widgets('5')
+        so = self.make_so('5')
+        services.confirm_sales_order(so, user=self.user)
+        response = self.client.post(reverse('salesorder-ship', args=[so.id]), {}, format='json')
+        self.assertEqual(response.status_code, status.HTTP_200_OK, response.data)
+        self.assertEqual(response.data['order']['status'], 'shipped')
+        self.assertEqual(response.data['order']['lines'][0]['shipped_quantity'], '5.000')
+        so.refresh_from_db()
+        self.assertEqual(so.status, 'shipped')
+        invoice = self.client.post(reverse('salesorder-invoice', args=[so.id]), {}, format='json')
+        self.assertEqual(invoice.status_code, status.HTTP_201_CREATED, invoice.data)
+
     def test_cannot_ship_without_stock(self):
         so = self.make_so('5')
         services.confirm_sales_order(so, user=self.user)

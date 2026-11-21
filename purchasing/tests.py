@@ -59,6 +59,17 @@ class PurchaseOrderFlowTests(APITestCase):
         with self.assertRaises(Exception):
             services.confirm_purchase_order(po, user=self.user)
 
+    def test_receiving_everything_through_the_api_marks_the_order_received(self):
+        # Same trap as sales: the status must not be computed from the viewset's prefetched, pre-receipt lines.
+        po = self.make_po('10')
+        services.confirm_purchase_order(po, user=self.user)
+        response = self.client.post(reverse('purchaseorder-receive', args=[po.id]), {}, format='json')
+        self.assertEqual(response.status_code, status.HTTP_200_OK, response.data)
+        self.assertEqual(response.data['order']['status'], 'received')
+        self.assertEqual(response.data['order']['lines'][0]['received_quantity'], '10.000')
+        po.refresh_from_db()
+        self.assertEqual(po.status, 'received')
+
     def test_receive_moves_stock_and_posts_accrual(self):
         po = self.make_po('10')
         services.confirm_purchase_order(po, user=self.user)

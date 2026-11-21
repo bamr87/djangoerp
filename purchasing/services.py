@@ -1,6 +1,7 @@
 from decimal import Decimal
 
 from django.db import transaction
+from django.db.models import F
 from django.utils import timezone
 from rest_framework import serializers
 
@@ -110,8 +111,10 @@ def receive_purchase_order(order, user=None, receipts=None, receipt_date=None):
             source_reference=f'grn:{grn_number}',
         )
 
-        order.status = 'received' if all(line.open_quantity <= 0 for line in order.lines.all()) \
-            else 'partially_received'
+        # Ask the database, not order.lines.all(): a caller (the API viewset) may have prefetched the lines
+        # before this receipt, and that cache still shows them open.
+        fully_received = not order.lines.filter(received_quantity__lt=F('quantity')).exists()
+        order.status = 'received' if fully_received else 'partially_received'
         order.save(update_fields=['status', 'updated_at'])
         log_event(user, 'purchase_order.receive', order, {
             'grn': grn_number,
