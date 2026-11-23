@@ -95,6 +95,56 @@ class FeedbackWidgetTests(TestCase):
             self.assertEqual(Path(found), Path(settings.BASE_DIR) / 'public' / name)
 
 
+class AssistPanelTests(TestCase):
+    """The fleet assistant kit (public/fleet-assist.js, templates/includes/fleet-assist.html) is a developer tool:
+    company/base.html mounts it, and company.context_processors.fleet turns it on under DEBUG only."""
+
+    # Every page this repo renders from its own templates: the landing page, the workspace shell and the console.
+    PAGES = ('company:home', 'workspace:shell', 'simulation:console')
+
+    def home_html(self):
+        return self.client.get(reverse('company:home')).content.decode()
+
+    @override_settings(DEBUG=True)
+    def test_debug_mounts_the_panel_once_for_this_repo(self):
+        html = self.home_html()
+        self.assertEqual(html.count('<fleet-assist'), 1)
+        tag = re.search(r'<fleet-assist\b[^>]*>', html).group(0)
+        for attribute in (
+            'repo="bamr87/djangoerp"',
+            'branch="main"',
+            'route="company:home"',
+            'framework="django"',
+            'app-version="%s"' % settings.APP_VERSION,
+            'env="development"',
+        ):
+            self.assertIn(attribute, tag)
+        self.assertNotIn('broker=', tag)  # the kit's default: the Harness Console on this machine
+        self.assertLess(html.index('</footer>'), html.index('<fleet-assist'))
+        self.assertLess(html.index('</fleet-assist>'), html.index('</body>'))
+
+    @override_settings(DEBUG=True)
+    def test_panel_script_resolves_from_public(self):
+        sources = re.findall(r'<script src="([^"]*fleet-assist[^"]*)" defer></script>', self.home_html())
+        self.assertEqual(sources, ['/static/js/fleet-assist.js'])
+        found = finders.find(sources[0].removeprefix('/static/'))
+        self.assertIsNotNone(found, sources[0])
+        self.assertEqual(Path(found), Path(settings.BASE_DIR) / 'public' / 'fleet-assist.js')
+
+    @override_settings(DEBUG=False)
+    def test_no_page_carries_the_panel_without_debug(self):
+        for name in self.PAGES:
+            response = self.client.get(reverse(name))
+            self.assertEqual(response.status_code, 200, name)
+            self.assertNotIn('fleet-assist', response.content.decode(), name)
+
+    def test_context_follows_debug(self):
+        for debug in (True, False):
+            with override_settings(DEBUG=debug):
+                context = self.client.get(reverse('company:home')).context
+                self.assertIs(context['FLEET_ASSIST'], debug)
+
+
 class VersionEndpointTests(TestCase):
     """GET /version is the build identity (hub specs/BACKEND.md UPS-BE-11)."""
 

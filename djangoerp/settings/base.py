@@ -76,7 +76,8 @@ GIT_SHA = env.str('GIT_SHA', default='') or None
 BUILT_AT = env.str('BUILT_AT', default='') or None
 
 # The fleet "Improve this page" widget (templates/includes/fleet-feedback.html) files issues against this repo and
-# branch; company.context_processors.fleet hands both, with APP_VERSION, to every template.
+# branch; company.context_processors.fleet hands both, with APP_VERSION, to every template. The fleet assistant
+# panel (templates/includes/fleet-assist.html) reads the same three and is on only under DEBUG.
 FLEET_REPO = 'bamr87/djangoerp'
 FLEET_BRANCH = env('FLEET_BRANCH', default='main')
 
@@ -120,9 +121,9 @@ USE_TZ = True
 
 STATIC_URL = 'static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
-# public/ holds the fleet feedback kit's scripts: the hub's `tools/fanout.sh --kit feedback` vendors them there and
-# upgrades them in place, so they stay put. The 'js' prefix serves them where the kit's Django include asks for
-# them, static/js/fleet-feedback.js and static/js/fleet-feedback-capture.js.
+# public/ holds the fleet kits' scripts: the hub's `tools/fanout.sh --kit feedback` and `--kit assist` vendor them
+# there and upgrade them in place, so they stay put. The 'js' prefix serves them where the kits' Django includes ask
+# for them: static/js/fleet-feedback.js, static/js/fleet-feedback-capture.js and static/js/fleet-assist.js.
 STATICFILES_DIRS = [('js', BASE_DIR / 'public')]
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
