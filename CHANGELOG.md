@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.5.0](https://github.com/bamr87/djangoerp/compare/v0.4.0...v0.5.0) (2026-11-27)
+
+
+### Added
+
+* **assist:** adopt the fleet page bridge (kit v0.1.1) ([a3af331](https://github.com/bamr87/djangoerp/commit/a3af331e939a79fa07fc4e19bf4fd108642b2147))
+* **assist:** mount the page bridge in the base template ([e41a227](https://github.com/bamr87/djangoerp/commit/e41a2274f2c5e36b647765edc0ab1121dac4a6e2))
+
 ## [0.4.0](https://github.com/bamr87/djangoerp/compare/v0.3.0...v0.4.0) (2026-11-21)
 
 
